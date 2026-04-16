@@ -139,6 +139,14 @@ function setAuthTab(t){
   var ok=document.getElementById('auth-ok');
   if(ok) ok.textContent='';
 }
+function submitAuth(){
+  var err=document.getElementById('auth-err');
+  if(err) err.textContent='Loading, please wait...';
+}
+function forgotPassword(){
+  var err=document.getElementById('auth-err');
+  if(err) err.textContent='Loading, please wait...';
+}
 </script>
 
 <!-- Auth overlay — shown when logged out -->
