@@ -1532,25 +1532,9 @@ async function loadFromSupabase(){
 }
 
 async function migrateLocalStorage(){
-  // Only migrate if Supabase has no entries but localStorage does
-  if(entries.length>0) return;
-  const local=localStorage.getItem('nw_entries');
-  if(!local) return;
-  try{
-    const localEntries=JSON.parse(local);
-    if(!localEntries||localEntries.length===0) return;
-    setSyncBar('Migrating your existing data to the cloud...');
-    for(const e of localEntries){
-      await saveEntryToSupabase(e);
-    }
-    await loadFromSupabase();
-    localStorage.removeItem('nw_entries');
-    setSyncBar('Data migrated successfully','var(--green)');
-    setTimeout(()=>setSyncBar(''),3000);
-  } catch(err){
-    console.error('Migration error:',err);
-    setSyncBar('');
-  }
+  // Migration disabled - new users start fresh
+  // localStorage data stays local only
+  return;
 }
 
 async function saveAccountsToSupabase(){
