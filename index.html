@@ -124,6 +124,22 @@
 </style>
 </head>
 <body>
+<script>
+// Pre-declare globals so onclick handlers work before defer scripts run
+var authTab='login';
+function setAuthTab(t){
+  authTab=t;
+  document.querySelectorAll('.auth-tab').forEach((el,i)=>el.classList.toggle('active',['login','signup'][i]===t));
+  var btn=document.getElementById('auth-btn');
+  if(btn) btn.textContent=t==='login'?'Sign in':'Create account';
+  var fw=document.getElementById('auth-forgot-wrap');
+  if(fw) fw.style.display=t==='login'?'':'none';
+  var err=document.getElementById('auth-err');
+  if(err) err.textContent='';
+  var ok=document.getElementById('auth-ok');
+  if(ok) ok.textContent='';
+}
+</script>
 
 <!-- Auth overlay — shown when logged out -->
 <div id="auth-overlay">
