@@ -1478,39 +1478,41 @@ async function loadFromSupabase(){
   try{
     // Load accounts
     const {data:accts,error:ae}=await sb.from('accounts').select('*').eq('user_id',currentUser.id).order('sort_order');
-    if(ae) throw ae;
+    if(ae){console.error('accounts error:',ae);throw ae;}
 
-    // Load entries + values
+    // Load entries
     const {data:ents,error:ee}=await sb.from('entries').select('id,entry_date').eq('user_id',currentUser.id).order('entry_date');
-    if(ee) throw ee;
+    if(ee){console.error('entries error:',ee);throw ee;}
 
     let entryValues=[];
-    if(ents.length>0){
+    if(ents&&ents.length>0){
       const entryIds=ents.map(e=>e.id);
       const {data:vals,error:ve}=await sb.from('entry_values').select('*').in('entry_id',entryIds);
-      if(ve) throw ve;
-      entryValues=vals;
+      if(ve){console.error('values error:',ve);throw ve;}
+      entryValues=vals||[];
     }
 
-    // Load settings
-    const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).single();
+    // Load settings (ignore error — just use defaults)
+    const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
 
-    // Map to app format
+    // Map accounts
     if(accts&&accts.length>0){
       accounts=accts.map(a=>({name:a.name,cat:a.category,liquid:a.liquid,archived:a.archived,_id:a.id}));
     } else {
-      // First time user — seed defaults
+      // First time user — use defaults locally, save in background
       accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
-      await saveAccountsToSupabase();
+      saveAccountsToSupabase().catch(e=>console.error('seed accounts error:',e));
     }
 
-    entries=ents.map(e=>{
+    // Map entries
+    entries=(ents||[]).map(e=>{
       const vals=entryValues.filter(v=>v.entry_id===e.id);
       const values={};
       vals.forEach(v=>{values[v.account_name]=parseFloat(v.value)||0;});
       return {date:e.entry_date,values,_id:e.id};
     });
 
+    // Map settings
     if(s){
       settings={
         forecastYears:s.forecast_years||3,
@@ -1520,14 +1522,13 @@ async function loadFromSupabase(){
       };
     }
 
-    // Migrate any localStorage data if this is a fresh Supabase account
-    await migrateLocalStorage();
-
     setSyncBar('');
   } catch(e){
     console.error('Load error:',e);
-    setSyncBar('Error loading data — using local cache','var(--red)');
-    load();loadSettings();
+    setSyncBar('Error loading data','var(--red)');
+    // Fall back to defaults so app is usable
+    accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+    entries=[];
   }
 }
 
