@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Networth.fyi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;scrollbar-width:none;-ms-overflow-style:none;}
+  *::-webkit-scrollbar{display:none;}
+  /* ── Auth overlay ── */
+  #auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .auth-box{width:100%;max-width:380px;}
+  .auth-logo{font-size:22px;font-weight:700;margin-bottom:6px;}
+  .auth-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
+  .auth-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .auth-tab{flex:1;padding:8px;font-size:13px;background:transparent;border:none;cursor:pointer;font-family:inherit;color:var(--text2);}
+  .auth-tab.active{background:var(--bg2);color:var(--text);font-weight:500;}
+  .auth-field{margin-bottom:14px;}
+  .auth-field label{display:block;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+  .auth-field input{width:100%;padding:9px 12px;font-size:14px;background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:inherit;outline:none;}
+  .auth-field input:focus{border-color:#1D9E75;}
+  .auth-err{font-size:12px;color:var(--red);margin-bottom:10px;min-height:16px;}
+  .auth-ok{font-size:12px;color:var(--green);margin-bottom:10px;min-height:16px;}
+  /* ── Top bar when logged in ── */
+  #topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  #topbar .user-email{font-size:12px;color:var(--text2);}
+  #topbar button{font-size:12px;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit;background:transparent;border:1px solid var(--border2);color:var(--text2);}
+  #topbar button:hover{color:var(--text);}
+  /* ── Sync status ── */
+  #sync-bar{font-size:11px;color:var(--text2);text-align:right;margin-bottom:8px;min-height:14px;}
+  :root{
+    --bg:#ffffff;--bg2:#f5f5f3;
+    --text:#1a1a1a;--text2:#666;
+    --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+    --green:#0f6e56;--red:#a32d2d;--amber:#854f0b;
+    --radius:10px;--radius-sm:7px;
+    --mono:'Courier New',monospace;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#1c1c1e;--bg2:#2c2c2e;
+      --text:#f0f0f0;--text2:#aaa;
+      --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+      --green:#5dcaa5;--red:#f09595;--amber:#ef9f27;
+    }
+  }
+  html,body{scrollbar-width:none;-ms-overflow-style:none;}
+  html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:860px;margin:0 auto;padding:20px 20px 60px;}
+  .dash-top{display:grid;grid-template-columns:200px 1fr;gap:16px;margin-bottom:20px;align-items:start;}
+  .dash-top .cards{display:flex;flex-direction:column;gap:8px;margin-bottom:0;}
+  @media(max-width:600px){.dash-top{grid-template-columns:1fr;}.dash-top .cards{flex-direction:row;flex-wrap:wrap;}}
+  h1{font-size:20px;font-weight:600;margin-bottom:16px;}
+  .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto;}
+  .tab{padding:8px 14px;font-size:13px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text2);font-family:inherit;margin-bottom:-1px;white-space:nowrap;}
+  .tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;}
+  .card{background:var(--bg2);border-radius:var(--radius-sm);padding:14px;}
+  .card-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .card-value{font-size:20px;font-weight:600;font-family:var(--mono);}
+  .card-sub{font-size:11px;color:var(--text2);margin-top:3px;font-family:var(--mono);}
+  .green{color:var(--green);}
+  .red{color:var(--red);}
+  .section-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:18px 0 7px;}
+  .list{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+  .list-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border);}
+  .list-row:last-child{border-bottom:none;}
+  .row-right{display:flex;align-items:center;gap:10px;}
+  .row-val{font-size:13px;font-family:var(--mono);color:var(--text);}
+  .row-diff{font-size:11px;font-family:var(--mono);}
+  .entry-bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;}
+  .field label{display:block;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+  input[type=date],input[type=number],input[type=text],select{
+    background:var(--bg);border:1px solid var(--border2);border-radius:6px;
+    color:var(--text);font-family:inherit;padding:6px 10px;font-size:13px;outline:none;
+  }
+  input:focus,select:focus{border-color:#1D9E75;}
+  input[type=number]{width:110px;text-align:right;font-family:var(--mono);}
+  .live-total-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+  .live-total{font-size:18px;font-weight:600;font-family:var(--mono);color:var(--text);}
+  button.primary{background:#1D9E75;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+  button.primary:hover{background:#0f6e56;}
+  button.warn{background:transparent;border:1px solid var(--amber);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--amber);cursor:pointer;font-family:inherit;}
+  button.warn:hover{background:var(--amber);color:#fff;}
+  button.danger{background:transparent;border:1px solid var(--red);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--red);cursor:pointer;font-family:inherit;}
+  button.danger:hover{background:var(--red);color:#fff;}
+  button.ghost{background:transparent;border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;}
+  button.ghost:hover{color:var(--text);}
+  .empty{text-align:center;padding:40px 16px;color:var(--text2);}
+  .empty p{margin-bottom:14px;font-size:14px;}
+  .chart-wrap{position:relative;width:100%;height:220px;margin-bottom:20px;}
+  .badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;margin-left:6px;vertical-align:middle;}
+  .badge-archived{background:rgba(133,79,11,0.12);color:var(--amber);}
+
+  /* Manage tab */
+  .mgmt-header{display:grid;grid-template-columns:1fr 140px 60px 120px;gap:8px;padding:6px 14px;
+    background:var(--bg2);border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;}
+  .mgmt-header span{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+  .mgmt-row{display:grid;grid-template-columns:1fr 140px 60px 120px;gap:8px;align-items:start;
+    padding:8px 14px;background:var(--bg);border:1px solid var(--border);border-top:none;}
+  .mgmt-row:last-child{border-radius:0 0 8px 8px;}
+  .mgmt-row input[type=text],.mgmt-row select{min-width:0;width:100%;}
+  .archived-row{background:var(--bg2);opacity:0.8;}
+  .liq-wrap{display:flex;flex-direction:column;align-items:center;padding-top:5px;gap:3px;}
+  .liq-wrap span{font-size:10px;color:var(--text2);}
+  .liq-toggle{position:relative;display:inline-block;width:34px;height:20px;cursor:pointer;flex-shrink:0;}
+  .liq-toggle input{opacity:0;width:0;height:0;position:absolute;}
+  .liq-slider{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--border2);border-radius:20px;transition:.2s;cursor:pointer;}
+  .liq-slider:before{position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s;}
+  .liq-toggle input:checked+.liq-slider{background:#1D9E75;}
+  .liq-toggle input:checked+.liq-slider:before{transform:translateX(14px);}
+  .badge-liquid{background:rgba(15,110,86,0.1);color:var(--green);}
+  .add-form{background:var(--bg2);border-radius:var(--radius-sm);padding:14px;margin-top:4px;display:flex;flex-direction:column;gap:10px;}
+  .add-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .add-row input,.add-row select{flex:1;min-width:120px;}
+  .msg{font-size:12px;padding:7px 10px;border-radius:6px;margin-bottom:10px;}
+  .msg.ok{background:rgba(15,110,86,0.1);color:var(--green);}
+  .msg.err{background:rgba(163,45,45,0.1);color:var(--red);}
+  .msg.warn{background:rgba(133,79,11,0.1);color:var(--amber);}
+  .warn-box{background:rgba(133,79,11,0.08);border:1px solid rgba(133,79,11,0.25);border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:13px;color:var(--amber);display:none;}
+  .warn-box b{font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- Auth overlay — shown when logged out -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">Networth.fyi</div>
+    <div class="auth-sub">Your net worth. Your data. Private by default.</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="setAuthTab('login')">Sign in</button>
+      <button class="auth-tab" onclick="setAuthTab('signup')">Create account</button>
+    </div>
+    <div class="auth-field"><label>Email</label><input type="email" id="auth-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
+    <div class="auth-field"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
+    <div class="auth-err" id="auth-err"></div>
+    <div class="auth-ok" id="auth-ok"></div>
+    <button class="primary" style="width:100%;padding:10px;font-size:14px" onclick="submitAuth()" id="auth-btn">Sign in</button>
+    <p style="font-size:11px;color:var(--text2);margin-top:14px;text-align:center">
+      <span id="auth-forgot-wrap"><a href="#" onclick="forgotPassword();return false" style="color:var(--text2)">Forgot password?</a></span>
+    </p>
+  </div>
+</div>
+
+<!-- Main app — hidden until logged in -->
+<div id="app" style="display:none">
+<div id="topbar">
+  <h1>Networth.fyi</h1>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="user-email" id="user-email"></span>
+    <button onclick="signOut()">Sign out</button>
+  </div>
+</div>
+<div id="sync-bar"></div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+  <button class="tab" onclick="switchTab('enter')">Entry</button>
+  <button class="tab" onclick="switchTab('history')">History</button>
+  <button class="tab" onclick="switchTab('manage')">Manage accounts</button>
+  <button class="tab" onclick="switchTab('settings')">Settings</button>
+</div>
+
+<div id="pane-dashboard"></div>
+<div id="pane-enter"   style="display:none"></div>
+<div id="pane-history" style="display:none"></div>
+<div id="pane-manage"  style="display:none"></div>
+<div id="pane-settings" style="display:none"></div>
+</div><!-- end #app -->
+
+<script>
+const IMPORTED_ENTRIES=[{"date":"2022-09-02","values":{"Fidelity Brokerage":6573.0,"Inspire HSA":2925.0,"Optum HSA":10051.0,"Mueller Checking":15207.0,"Mueller Savings":20216.0,"RJ RIRA":10693.0,"Etrade Annie Brokerage":48446.0,"Fidelity 529":2164.0,"ACN 401K":38805.0,"Fundrise":2280.0,"YieldStreet":1038.0,"RealtyMogul":8476.0,"529":8657.0,"Home Equity":39000.0,"Arrived Homes":1000.0,"Diversyfund":500.0}},{"date":"2022-10-09","values":{"Fidelity Brokerage":6138.49,"Inspire HSA":3207.09,"Optum HSA":9698.14,"Mueller Checking":20598.47,"Mueller Savings":20573.29,"RJ RIRA":10239.68,"Etrade Annie Brokerage":44478.0,"Fidelity 529":2189.24,"ACN 401K":38187.69,"Fundrise":3476.64,"YieldStreet":1037.15,"RealtyMogul":9517.77,"529":8459.79,"Home Equity":40168.78,"Arrived Homes":1000.0,"Diversyfund":539.79}},{"date":"2022-10-31","values":{"Fidelity Brokerage":6758.04,"Inspire HSA":3545.03,"Optum HSA":9956.88,"Mueller Checking":17444.93,"Mueller Savings":20930.54,"RJ RIRA":11072.44,"Etrade Annie Brokerage":46890.39,"Fidelity 529":2292.81,"ACN 401K":41086.99,"Fundrise":3680.69,"YieldStreet":1040.71,"RealtyMogul":10543.98,"529":9563.09,"Home Equity":40744.07,"Arrived Homes":1000.0,"Diversyfund":539.79}},{"date":"2022-12-01","values":{"Fidelity Brokerage":7155.02,"Inspire HSA":4216.67,"Optum HSA":10092.93,"Mueller Checking":18780.53,"Mueller Savings":21287.77,"ACN ESPP":6319.53,"RJ RIRA":11684.0,"Etrade Annie Brokerage":49189.87,"Fidelity 529":2467.88,"ACN 401K":45270.03,"Fundrise":3888.01,"YieldStreet":1050.56,"RealtyMogul":11596.24,"529":10709.68,"Home Equity":41320.92,"Arrived Homes":1000.0,"Diversyfund":539.79}},{"date":"2023-01-05","values":{"Fidelity Brokerage":6766.27,"Inspire HSA":4176.49,"Optum HSA":9942.34,"Mueller Checking":16247.01,"Mueller Savings":645.0,"ACN ESPP":5533.29,"Capital One Savings":21026.5,"RJ RIRA":11159.42,"Etrade Annie Brokerage":44934.21,"Fidelity 529":2561.21,"ACN 401K":44714.03,"Fundrise":3960.48,"YieldStreet":1043.04,"RealtyMogul":12651.87,"529":10967.5,"Home Equity":41899.33,"Arrived Homes":1000.0,"Diversyfund":539.79}},{"date":"2023-02-02","values":{"Fidelity Brokerage":7893.34,"Inspire HSA":5546.37,"Optum HSA":10401.62,"Mueller Checking":14214.91,"Mueller Savings":101.96,"ACN ESPP":6199.41,"Capital One Savings":23285.97,"RJ RIRA":12274.23,"ME Business":2000.0,"Etrade Annie Brokerage":52091.05,"Fidelity 529":2733.72,"ACN 401K":51167.59,"Fundrise":4167.34,"YieldStreet":1059.56,"RealtyMogul":13379.66,"529":12442.51,"Home Equity":42479.31,"Arrived Homes":970.7,"Diversyfund":539.79}},{"date":"2023-03-06","values":{"Fidelity Brokerage":7928.7,"Inspire HSA":5801.2,"Optum HSA":10358.94,"Mueller Checking":18383.84,"Mueller Savings":101.96,"ACN ESPP":5681.13,"Capital One Savings":23745.75,"RJ RIRA":12329.96,"ME Business":1832.55,"Etrade Annie Brokerage":50691.14,"Fidelity 529":2783.72,"ACN 401K":52859.96,"Fundrise":4370.48,"YieldStreet":1064.97,"RealtyMogul":14447.95,"529":12985.14,"Home Equity":43060.86,"Arrived Homes":970.7,"Diversyfund":539.79}},{"date":"2023-04-10","values":{"Fidelity Brokerage":8317.23,"Inspire HSA":6390.84,"Optum HSA":10182.14,"Mueller Checking":27795.43,"Mueller Savings":101.96,"ACN ESPP":5915.7,"Capital One Savings":24314.83,"RJ RIRA":12774.8,"ME Business":1814.55,"Etrade Annie Brokerage":53452.45,"Fidelity 529":2941.19,"ACN 401K":64050.59,"Fundrise":4591.13,"YieldStreet":1072.31,"RealtyMogul":15512.83,"529":13835.0,"Home Equity":43643.99,"Arrived Homes":968.6,"Diversyfund":539.79}},{"date":"2023-05-05","values":{"Fidelity Brokerage":8449.03,"Inspire HSA":6599.66,"Optum HSA":10129.55,"Mueller Checking":28702.96,"Mueller Savings":101.96,"ACN ESPP":13058.5,"Capital One Savings":25384.94,"RJ RIRA":12964.13,"ME Business":1799.55,"Etrade Annie Brokerage":53368.09,"Fidelity 529":3038.09,"ACN 401K":64899.66,"Fundrise":4797.64,"YieldStreet":1079.79,"RealtyMogul":16590.27,"529":14444.92,"Home Equity":44228.7,"Arrived Homes":968.6,"Diversyfund":539.79}},{"date":"2023-06-08","values":{"Fidelity Brokerage":9225.16,"Inspire HSA":7306.38,"Optum HSA":10426.13,"Mueller Checking":24453.78,"Mueller Savings":101.96,"ACN ESPP":15240.47,"Wealthfront":25455.3,"Capital One Savings":1022.94,"RJ RIRA":12964.13,"ME Business":2084.55,"Etrade Annie Brokerage":58583.41,"Fidelity 529":3118.46,"ACN 401K":72308.19,"Fundrise":4997.89,"YieldStreet":1095.21,"RealtyMogul":17326.17,"529":15871.78,"Home Equity":44814.99,"Arrived Homes":968.6,"Diversyfund":539.79}},{"date":"2023-07-02","values":{"Fidelity Brokerage":9953.99,"Inspire HSA":7973.02,"Optum HSA":10654.71,"Mueller Checking":19103.69,"Mueller Savings":101.96,"ACN ESPP":15120.42,"Wealthfront":25955.3,"Capital One Savings":2027.96,"RJ RIRA":15346.95,"ME Business":2084.55,"Etrade Annie Brokerage":60991.47,"Fidelity 529":3235.48,"ACN 401K":76825.53,"Fundrise":5128.14,"YieldStreet":1108.04,"RealtyMogul":17914.59,"529":17162.7,"Home Equity":45402.87,"Arrived Homes":968.6,"Diversyfund":539.79}},{"date":"2023-08-11","values":{"Fidelity Brokerage":9901.21,"Inspire HSA":8727.87,"Optum HSA":10773.78,"Mueller Checking":26269.19,"Mueller Savings":101.96,"ACN ESPP":15167.95,"Wealthfront":325.47,"Milli Savings":25000.0,"Capital One Savings":3036.67,"RJ RIRA":15503.07,"ME Business":2084.55,"Etrade Annie Brokerage":62288.23,"Fidelity 529":3431.16,"ACN 401K":80448.79,"Fundrise":5333.43,"YieldStreet":1125.45,"RealtyMogul":18502.02,"529":17989.87,"Home Equity":45992.34,"Arrived Homes":980.7,"Diversyfund":539.79}},{"date":"2023-09-07","values":{"Fidelity Brokerage":10156.08,"Inspire HSA":9183.95,"Optum HSA":10692.2,"Mueller Checking":17390.29,"Mueller Savings":101.96,"ACN ESPP":15948.03,"Wealthfront":326.77,"Milli Savings":25101.0,"Capital One Savings":4049.4,"RJ RIRA":16089.06,"ME Business":2084.55,"Etrade Annie Brokerage":63242.21,"Fidelity 529":3517.38,"ACN 401K":83288.13,"Fundrise":5539.6,"YieldStreet":1125.32,"RealtyMogul":18661.88,"529":18695.55,"Home Equity":46583.41,"Arrived Homes":980.7,"Diversyfund":539.79}},{"date":"2023-10-12","values":{"Fidelity Brokerage":10398.39,"Inspire HSA":9517.16,"Optum HSA":10515.28,"Mueller Checking":14736.31,"Mueller Savings":101.96,"ACN ESPP":14969.99,"Wealthfront":328.03,"Milli Savings":25211.28,"Capital One Savings":5064.94,"RJ RIRA":15995.65,"ME Business":2084.55,"Etrade Annie Brokerage":63587.76,"Fidelity 529":3582.37,"ACN 401K":84666.04,"Fundrise":5628.0,"YieldStreet":1126.43,"RealtyMogul":19008.23,"529":19116.74,"Home Equity":47176.08,"Arrived Homes":980.7,"Diversyfund":539.79}},{"date":"2023-11-04","values":{"Fidelity Brokerage":10974.6,"Inspire HSA":9745.02,"Optum HSA":10339.38,"Mueller Checking":13499.46,"Mueller Savings":101.96,"ACN ESPP":23825.24,"Wealthfront":329.0,"Milli Savings":26318.01,"Capital One Savings":6084.82,"RJ RIRA":16114.91,"ME Business":2084.55,"Etrade Annie Brokerage":62689.49,"Fidelity 529":3600.87,"ACN 401K":85478.19,"Fundrise":5650.36,"YieldStreet":1128.29,"RealtyMogul":19351.35,"529":19805.78,"Home Equity":47770.35,"Arrived Homes":974.1,"Diversyfund":539.79}},{"date":"2023-12-03","values":{"Fidelity Brokerage":12111.59,"Inspire HSA":9745.02,"Optum HSA":10822.53,"Mueller Checking":14878.73,"Mueller Savings":101.96,"ACN ESPP":25692.56,"Wealthfront":581.13,"Milli Savings":27433.4,"Capital One Savings":7107.65,"RJ RIRA":17401.59,"ME Business":2084.55,"Etrade Annie Brokerage":66553.14,"Fidelity 529":3684.86,"ACN 401K":92605.17,"Fundrise":5755.05,"YieldStreet":1141.62,"RealtyMogul":19737.55,"529":21588.51,"Home Equity":48366.23,"Arrived Homes":974.1,"Diversyfund":539.79}},{"date":"2024-01-23","values":{"Fidelity Brokerage":13726.57,"Inspire HSA":13275.29,"Optum HSA":11283.34,"Mueller Checking":12177.56,"Mueller Savings":101.96,"ACN ESPP":27933.04,"Wealthfront":1083.98,"Milli Savings":29687.86,"Capital One Savings":9134.99,"RJ RIRA":19244.6,"ME Business":2084.55,"Etrade Annie Brokerage":71648.48,"Fidelity 529":3743.35,"ACN 401K":102080.81,"Fundrise":5835.74,"YieldStreet":1144.39,"RealtyMogul":20436.1,"529":24185.43,"Home Equity":49562.84,"Arrived Homes":974.1,"Diversyfund":539.79}},{"date":"2024-02-03","values":{"Fidelity Brokerage":13930.29,"Inspire HSA":13465.19,"Optum HSA":11395.15,"Mueller Checking":4923.91,"Mueller Savings":101.96,"ACN ESPP":28344.2,"Wealthfront":1087.93,"Milli Savings":29687.86,"Capital One Savings":9166.13,"RJ RIRA":20159.62,"ME Business":2084.55,"OT Checking":2000.0,"Etrade Annie Brokerage":71847.88,"Fidelity 529":3761.34,"ACN 401K":104316.93,"Fundrise":5894.76,"YieldStreet":1147.13,"RealtyMogul":19940.08,"529":24586.31,"Home Equity":49562.84,"Arrived Homes":943.3,"Diversyfund":539.79}},{"date":"2024-03-10","values":{"Fidelity Brokerage":14671.32,"Inspire HSA":14805.78,"Optum HSA":11856.68,"Mueller Checking":25014.48,"Mueller Savings":101.96,"ACN ESPP":26000.0,"Wealthfront":1342.48,"Milli Savings":19822.69,"Capital One Savings":4191.05,"RJ RIRA":21317.2,"ME Business":2084.55,"OT Checking":2000.0,"Etrade Annie Brokerage":72373.53,"Fidelity 529":3809.33,"ACN 401K":111280.69,"Fundrise":5967.05,"YieldStreet":1154.26,"RealtyMogul":20293.68,"529":25867.07,"Home Equity":50163.58,"Arrived Homes":943.3,"Coinbase":1384.27,"Diversyfund":539.79}},{"date":"2024-04-08","values":{"Fidelity Brokerage":15453.49,"Inspire HSA":14890.63,"Optum HSA":11836.84,"Mueller Checking":17806.1,"Mueller Savings":101.96,"ACN ESPP":24000.0,"Wealthfront":1598.0,"Milli Savings":19920.16,"Capital One Savings":5207.82,"RJ RIRA":22062.52,"ME Business":2084.55,"OT Checking":8205.45,"OT Savings":500.0,"Etrade Annie Brokerage":75747.48,"Fidelity 529":3797.34,"ACN 401K":115473.42,"Fundrise":6078.32,"YieldStreet":1156.22,"RealtyMogul":20639.82,"529":26665.99,"Home Equity":50765.94,"Arrived Homes":950.1,"Coinbase":1440.59,"Diversyfund":539.79}},{"date":"2024-05-11","values":{"Fidelity Brokerage":15962.86,"Inspire HSA":14855.01,"Optum HSA":11919.91,"Mueller Checking":14315.57,"Mueller Savings":101.96,"ACN ESPP":24000.0,"Wealthfront":1855.0,"Milli Savings":25004.93,"Capital One Savings":6627.46,"RJ RIRA":21960.03,"ME Business":2084.55,"OT Checking":4334.45,"OT Savings":250.0,"Etrade Annie Brokerage":79349.21,"Fidelity 529":3806.34,"Daye 401K":1746.08,"ACN 401K":115926.42,"Fundrise":6141.88,"YieldStreet":1160.73,"RealtyMogul":19553.04,"529":27243.83,"Home Equity":52369.93,"Arrived Homes":935.5,"Coinbase":1211.88,"Diversyfund":539.79}},{"date":"2024-06-05","values":{"Fidelity Brokerage":17021.27,"Inspire HSA":14915.14,"Optum HSA":11912.58,"Mueller Checking":6870.32,"Mueller Savings":101.96,"ACN ESPP":24000.0,"Wealthfront":2113.52,"Milli Savings":25100.21,"Capital One Savings":7251.27,"RJ RIRA":22604.36,"ME Business":2084.55,"OT Checking":4200.0,"OT Savings":125.0,"OT QB Checking":10100.0,"Etrade Annie Brokerage":81772.02,"Fidelity 529":3843.83,"Daye 401K":3498.57,"ACN 401K":118348.4,"Fundrise":6200.06,"YieldStreet":1167.71,"RealtyMogul":19803.04,"529":27884.79,"Home Equity":53978.27,"Arrived Homes":936.8,"Coinbase":1424.75,"Diversyfund":539.79}},{"date":"2024-07-08","values":{"Fidelity Brokerage":17987.66,"Inspire HSA":15357.12,"Optum HSA":12146.28,"Mueller Checking":12899.54,"Mueller Savings":101.96,"ACN ESPP":20000.0,"Wealthfront":2372.42,"Milli Savings":7183.82,"Capital One Savings":2266.6,"RJ RIRA":24952.58,"ME Business":2069.67,"OT Checking":6325.34,"OT Savings":125.0,"OT QB Checking":20000.0,"Etrade Annie Brokerage":87714.6,"Fidelity 529":3875.32,"Daye 401K":5421.66,"ACN 401K":126079.23,"Fundrise":6335.92,"YieldStreet":1164.16,"RealtyMogul":19803.04,"529":29438.98,"Home Equity":55590.96,"Arrived Homes":938.1,"Coinbase":1133.17,"HPP Equity":20000.0,"Diversyfund":539.79}},{"date":"2024-08-05","values":{"Fidelity Brokerage":16935.01,"Inspire HSA":15091.04,"Optum HSA":12008.02,"Mueller Checking":6128.93,"Mueller Savings":101.96,"ACN ESPP":25500.0,"Wealthfront":2632.74,"Milli Savings":7216.54,"Capital One Savings":3276.43,"RJ RIRA":22136.99,"ME Business":2054.55,"OT Checking":469.45,"OT Savings":125.0,"OT QB Checking":34473.0,"Etrade Annie Brokerage":79997.8,"Fidelity 529":3908.32,"Daye 401K":6871.07,"ACN 401K":120000.0,"Fundrise":6395.5,"YieldStreet":1169.07,"RealtyMogul":19803.04,"529":29071.03,"Home Equity":57208.02,"Arrived Homes":937.59,"Coinbase":1079.99,"HPP Equity":20000.0,"Diversyfund":539.79}},{"date":"2024-09-09","values":{"Fidelity Brokerage":18282.2,"Inspire HSA":15249.24,"Optum HSA":12160.81,"Mueller Checking":10459.95,"Mueller Savings":101.96,"ACN ESPP":26500.0,"Wealthfront":2894.08,"Milli Savings":7244.95,"Capital One Savings":4289.82,"RJ RIRA":23280.89,"ME Business":2054.55,"OT Checking":5382.44,"OT Savings":125.0,"OT QB Checking":44673.5,"Etrade Annie Brokerage":81799.71,"Fidelity 529":3944.31,"Daye 401K":8662.01,"ACN 401K":120000.0,"Fundrise":6456.05,"YieldStreet":1174.41,"RealtyMogul":19083.7,"529":29814.48,"Home Equity":58826.0,"Arrived Homes":940.0,"Coinbase":1153.29,"HPP Equity":20000.0,"Diversyfund":539.79}},{"date":"2024-10-09","values":{"Fidelity Brokerage":19841.43,"Inspire HSA":15902.68,"Optum HSA":12661.86,"Mueller Checking":14231.1,"Mueller Savings":101.96,"ACN ESPP":27000.0,"Wealthfront":3655.98,"Capital One Savings":5305.99,"RJ RIRA":25689.26,"ME Business":2054.55,"OT Checking":5924.77,"OT Savings":125.0,"OT QB Checking":45351.76,"Etrade Annie Brokerage":87128.63,"Fidelity 529":3978.81,"Daye 401K":11879.45,"ACN 401K":122000.0,"Fundrise":6549.43,"YieldStreet":1206.5,"RealtyMogul":19083.7,"529":31782.17,"Home Equity":60455.29,"Arrived Homes":940.75,"Coinbase":1231.97,"HPP Equity":20000.0,"Diversyfund":539.79}},{"date":"2024-11-08","values":{"Fidelity Brokerage":22063.36,"Inspire HSA":16314.19,"Optum HSA":13163.7,"Mueller Checking":12348.28,"Mueller Savings":101.96,"ACN ESPP":27000.0,"Wealthfront":4921.83,"Capital One Savings":6325.69,"RJ RIRA":27044.17,"ME Business":2054.55,"OT Checking":11983.33,"OT Savings":125.0,"OT QB Checking":45524.24,"Etrade Annie Brokerage":91611.87,"Fidelity 529":3969.81,"Daye 401K":13944.32,"ACN 401K":124000.0,"Fundrise":6599.47,"YieldStreet":1209.62,"RealtyMogul":19083.7,"529":33368.21,"Home Equity":62085.53,"Arrived Homes":925.91,"Coinbase":1526.26,"HPP Equity":20000.0,"Diversyfund":539.79}},{"date":"2024-12-07","values":{"Fidelity Brokerage":24550.14,"Inspire HSA":16637.97,"Optum HSA":13423.73,"Mueller Checking":5963.3,"Mueller Savings":101.96,"ACN ESPP":27000.0,"Wealthfront":6190.93,"Capital One Savings":4845.69,"RJ RIRA":28312.09,"ME Business":2054.55,"OT Checking":5743.23,"OT Savings":125.0,"OT QB Checking":85746.5,"Etrade Annie Brokerage":93439.27,"Fidelity 529":3998.3,"Daye 401K":15889.09,"ACN 401K":125000.0,"Fundrise":6650.48,"YieldStreet":1214.83,"RealtyMogul":17433.45,"529":34513.67,"Home Equity":63720.18,"Arrived Homes":927.45,"Coinbase":1992.37,"HPP Equity":20000.0,"Diversyfund":539.79}},{"date":"2025-03-04","values":{"Fidelity Brokerage":25571.61,"Inspire HSA":15998.67,"Optum HSA":12913.69,"Mueller Checking":7332.78,"Mueller Savings":68.72,"ACN ESPP":29000.0,"Wealthfront":10019.41,"Capital One Savings":3886.71,"RJ RIRA":27058.2,"OT Checking":23372.53,"OT Savings":125.0,"OT QB Checking":46250.4,"Etrade Annie Brokerage":89529.38,"Fidelity 529":4022.3,"Daye 401K":17495.87,"ACN 401K":125000.0,"Fundrise":6889.43,"YieldStreet":1238.98,"RealtyMogul":17475.76,"529":34361.94,"Home Equity":170000.0,"Arrived Homes":912.87,"Coinbase":1733.64,"HPP Equity":20000.0,"Diversyfund":539.79}},{"date":"2025-05-29","values":{"Fidelity Brokerage":26530.26,"Inspire HSA":16122.36,"Optum HSA":13009.71,"Mueller Checking":16234.81,"Mueller Savings":68.72,"ACN ESPP":27000.0,"Wealthfront":13593.22,"Capital One Savings":6915.93,"RJ RIRA":28717.88,"OT Checking":123088.75,"OT Savings":125.0,"OT QB Checking":166558.09,"Etrade Annie Brokerage":89933.19,"Fidelity 529":4053.79,"Daye 401K":18099.18,"ACN 401K":125515.46,"Fundrise":7028.41,"YieldStreet":1242.21,"RealtyMogul":16229.87,"529":35550.12,"Home Equity":170000.0,"Arrived Homes":937.14,"Coinbase":2115.7,"HPP Equity":20000.0,"Diversyfund":539.79}},{"date":"2025-12-27","values":{"Fidelity Brokerage":31267.42,"Inspire HSA":18149.75,"Optum HSA":14496.28,"Mueller Checking":18907.87,"Mueller Savings":68.72,"ACN ESPP":25000.0,"Wealthfront":5981.18,"Capital One Savings":14106.14,"RJ RIRA":34965.87,"OT Checking":334964.39,"OT Savings":125.0,"OT QB Checking":34545.8,"Etrade Annie Brokerage":76419.9,"Etrade Annie Roth":46357.0,"Fidelity 529":4287.75,"Daye 401K":21211.0,"Fundrise":7481.0,"YieldStreet":1281.0,"RealtyMogul":14604.0,"529":41986.0,"Home Equity":462000.0,"Arrived Homes":950.43,"Coinbase":1742.0,"VG Anne Brokerage":11810.0,"VG Sam Roth":14500.0,"OT 401K":164325.0,"HPP Equity":20000.0,"Diversyfund":539.79}}];
+
+const DEFAULT_ACCOUNTS=[
+  {cat:'Brokerage',  name:'Fidelity Brokerage',      liquid:true,  archived:false},
+  {cat:'HSA',        name:'Inspire HSA',              liquid:true,  archived:false},
+  {cat:'HSA',        name:'Optum HSA',                liquid:true,  archived:false},
+  {cat:'HSA',        name:'Thrivepass HSA',           liquid:true,  archived:false},
+  {cat:'Savings',    name:'Mueller Checking',         liquid:true,  archived:false},
+  {cat:'Savings',    name:'Mueller Savings',          liquid:true,  archived:false},
+  {cat:'Brokerage',  name:'ACN ESPP',                 liquid:true,  archived:false},
+  {cat:'Savings',    name:'Wealthfront',              liquid:true,  archived:false},
+  {cat:'Savings',    name:'Milli Savings',            liquid:true,  archived:false},
+  {cat:'Savings',    name:'Capital One Savings',      liquid:true,  archived:false},
+  {cat:'Retirement', name:'RJ RIRA',                  liquid:false, archived:false},
+  {cat:'Business',   name:'ME Business',              liquid:false, archived:false},
+  {cat:'Business',   name:'OT Checking',              liquid:false, archived:false},
+  {cat:'Business',   name:'OT Savings',               liquid:false, archived:false},
+  {cat:'Business',   name:'OT QB Checking',           liquid:false, archived:false},
+  {cat:'Business',   name:'OT Balance',               liquid:false, archived:false},
+  {cat:'Brokerage',  name:'Etrade Annie Brokerage',   liquid:false, archived:false},
+  {cat:'Retirement', name:'Etrade Annie Roth',        liquid:false, archived:false},
+  {cat:'529',        name:'Fidelity 529',             liquid:false, archived:false},
+  {cat:'Retirement', name:'Daye 401K',                liquid:false, archived:false},
+  {cat:'Retirement', name:'ACN 401K',                 liquid:false, archived:false},
+  {cat:'Real Estate',name:'Fundrise',                 liquid:false, archived:false},
+  {cat:'Real Estate',name:'YieldStreet',              liquid:false, archived:false},
+  {cat:'Real Estate',name:'RealtyMogul',              liquid:false, archived:false},
+  {cat:'529',        name:'529',                      liquid:false, archived:false},
+  {cat:'Real Estate',name:'Home Equity',              liquid:false, archived:false},
+  {cat:'Real Estate',name:'Arrived Homes',            liquid:false, archived:false},
+  {cat:'Crypto',     name:'Coinbase',                 liquid:false, archived:false},
+  {cat:'Brokerage',  name:'VG Anne Brokerage',        liquid:true,  archived:false},
+  {cat:'Retirement', name:'VG Anne Roth',             liquid:false, archived:false},
+  {cat:'Brokerage',  name:'VG Sam Brokerage',         liquid:true,  archived:false},
+  {cat:'Retirement', name:'VG Sam Roth',              liquid:false, archived:false},
+  {cat:'Retirement', name:'OT 401K',                  liquid:false, archived:false},
+  {cat:'Real Estate',name:'HPP Equity',               liquid:false, archived:false},
+  {cat:'Real Estate',name:'HomeWorks',                liquid:false, archived:false},
+  {cat:'Real Estate',name:'Diversyfund',              liquid:false, archived:false},
+];
+
+let accounts=[], entries=[], currentTab='dashboard', fv={};
+let histChart=null, dashLineChart=null;
+let delEntryConfirm=false, archiveConfirm=null, permDelConfirm=null;
+let dashFilter='all', dashFromDate='', dashToDate='', selectedCat=null;
+let editingEntryIdx=null;
+let showActual=true, showForecast=true, momMode='$'; // chart toggles
+
+const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,currentAge:'',goalAmount:''};
+let settings={...DEFAULT_SETTINGS};
+
+function loadSettings(){
+  try{const s=localStorage.getItem('nw_settings');if(s)settings={...DEFAULT_SETTINGS,...JSON.parse(s)};}
+  catch(e){settings={...DEFAULT_SETTINGS};}
+}
+function persistSettings(){try{localStorage.setItem('nw_settings',JSON.stringify(settings));}catch(e){}}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0);
+const fmtD=n=>(n>=0?'+':'')+fmt(n);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+// Sum ALL values in an entry (active + archived) — keeps totals accurate forever
+const sumE=e=>Object.values(e.values).reduce((a,b)=>a+(b||0),0);
+
+const activeAccounts=()=>accounts.filter(a=>!a.archived);
+const archivedAccounts=()=>accounts.filter(a=>a.archived);
+const getCats=()=>[...new Set(activeAccounts().map(a=>a.cat))];
+
+// Last known value for an account across all entries
+const lastVal=(name)=>{
+  for(let i=entries.length-1;i>=0;i--){
+    if(entries[i].values[name]!=null) return entries[i].values[name];
+  }
+  return 0;
+};
+
+function load(){
+  try{const d=localStorage.getItem('nw_entries');if(d)entries=JSON.parse(d);}catch(e){entries=[];}
+  try{
+    const a=localStorage.getItem('nw_accounts');
+    accounts=a?JSON.parse(a):JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+    // backfill archived and liquid flags for older saved data
+    accounts.forEach(a=>{
+      if(a.archived===undefined) a.archived=false;
+      if(a.liquid===undefined) a.liquid=false;
+    });
+    // if entries is empty, seed from imported history
+    if(entries.length===0){
+      entries=JSON.parse(JSON.stringify(IMPORTED_ENTRIES));
+      persist();
+    }
+    if(accounts.length===0){
+      accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+      persistAccounts();
+    }
+  }catch(e){accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));}
+}
+function persist(){try{localStorage.setItem('nw_entries',JSON.stringify(entries));}catch(e){}}
+function persistAccounts(){try{localStorage.setItem('nw_accounts',JSON.stringify(accounts));}catch(e){}}
+function initFV(){
+  const last=entries.length?entries[entries.length-1]:null;
+  fv={};
+  activeAccounts().forEach(a=>{fv[a.name]=last?(last.values[a.name]||0):0;});
+}
+
+function switchTab(t){
+  const TABS=['dashboard','enter','history','manage','settings'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',TABS[i]===t));
+  TABS.forEach(name=>$('pane-'+name).style.display=name===t?'block':'none');
+  if(t==='enter'&&currentTab!=='enter')fv={};
+  currentTab=t;
+  if(t==='dashboard')renderDash();
+  else if(t==='enter')renderEnter();
+  else if(t==='history')renderHist();
+  else if(t==='manage')renderManage();
+  else renderSettings();
+}
+
+/* ─────────────────────────────────────────
+   Dashboard helpers
+───────────────────────────────────────── */
+function avgMonthlyChange3m(){
+  if(entries.length<2) return null;
+  const last=entries[entries.length-1];
+  const lastDate=new Date(last.date);
+  const cutoff=new Date(lastDate);
+  cutoff.setMonth(cutoff.getMonth()-3);
+  let closest=entries[0],minDiff=Infinity;
+  entries.forEach(e=>{const d=Math.abs(new Date(e.date)-cutoff);if(d<minDiff){minDiff=d;closest=e;}});
+  if(closest.date===last.date) return null;
+  const startVal=sumE(closest),endVal=sumE(last);
+  const totalDiff=endVal-startVal;
+  const monthsDiff=(lastDate-new Date(closest.date))/(1000*60*60*24*30.44);
+  if(monthsDiff<0.5) return null;
+  const avgDollar=Math.round(totalDiff/monthsDiff);
+  const avgPct=startVal>0?Math.round(totalDiff/startVal/monthsDiff*1000)/10:null;
+  return {dollar:avgDollar,pct:avgPct};
+}
+
+function setDashFilter(f){
+  dashFilter=f;
+  if(f!=='custom'){dashFromDate='';dashToDate='';}
+  renderDash();
+}
+
+function filterUI_inline(){
+  const fe=getFilteredEntries();
+  const fromVal=dashFilter==='custom'?dashFromDate:(fe.length?fe[0].date:'');
+  const toVal=dashFilter==='custom'?dashToDate:(fe.length?fe[fe.length-1].date:'');
+  const btns=[['all','All'],['3y','3Y'],['1y','1Y'],['6m','6M']];
+  return btns.map(([f,l])=>`<button onclick="setDashFilter('${f}')" style="padding:3px 12px;font-size:11px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid ${dashFilter===f?'#1D9E75':'var(--border2)'};background:${dashFilter===f?'#1D9E75':'transparent'};color:${dashFilter===f?'#fff':'var(--text2)'}">${l}</button>`).join('')
+    +`<input type="date" value="${fromVal}" onchange="setCustomFrom(this.value)" style="font-size:11px;padding:3px 7px;margin-left:4px"/>
+    <span style="font-size:11px;color:var(--text2)">–</span>
+    <input type="date" value="${toVal}" onchange="setCustomTo(this.value)" style="font-size:11px;padding:3px 7px;"/>`;
+}
+
+function setCustomFrom(v){dashFilter='custom';dashFromDate=v;renderDash();}
+function setCustomTo(v){dashFilter='custom';dashToDate=v;renderDash();}
+
+function toggleActual(){showActual=!showActual;renderDash();}
+function toggleForecast(){showForecast=!showForecast;renderDash();}
+function setMomMode(m){momMode=m;renderDash();}
+
+function getFilteredEntries(){
+  if(!entries.length) return entries;
+  if(dashFilter==='custom') return entries.filter(e=>(!dashFromDate||e.date>=dashFromDate)&&(!dashToDate||e.date<=dashToDate));
+  if(dashFilter==='all') return entries;
+  const last=new Date(entries[entries.length-1].date);
+  const months={'6m':6,'1y':12,'3y':36}[dashFilter]||9999;
+  const cutoff=new Date(last); cutoff.setMonth(cutoff.getMonth()-months);
+  const cs=cutoff.toISOString().split('T')[0];
+  return entries.filter(e=>e.date>=cs);
+}
+
+function filterUI(){return filterUI_inline();}
+
+function selectCat(cat){selectedCat=cat;renderDash();}
+
+function getCatTimeSeries(cat,fe){
+  return fe.map(e=>activeAccounts().filter(a=>a.cat===cat).reduce((s,a)=>s+(e.values[a.name]||0),0));
+}
+
+function getCatAccountRows(cat,fe){
+  if(!fe.length) return [];
+  return activeAccounts().filter(a=>a.cat===cat).map(a=>{
+    let first=0,last=0;
+    for(let i=0;i<fe.length;i++){if((fe[i].values[a.name]||0)>0){first=fe[i].values[a.name];break;}}
+    for(let i=fe.length-1;i>=0;i--){if(fe[i].values[a.name]!=null){last=fe[i].values[a.name];break;}}
+    const chg=last-first,pct=first?(chg/first*100):(last?100:0);
+    return {name:a.name,first,last,chg,pct};
+  }).filter(r=>r.first>0||r.last>0);
+}
+
+let dashMoMChart=null, dashPieChart=null;
+
+function getMoMData(filteredEntries){
+  const src=filteredEntries||entries;
+  if(src.length<2) return [];
+
+  // Build a map of date -> net worth using only actual (non-forecast) entries
+  const actual={};
+  src.forEach(e=>{ actual[e.date]=sumE(e); });
+  const sortedDates=Object.keys(actual).sort();
+
+  // Range: from first to last actual entry in the filtered set — never future
+  const firstDate=new Date(sortedDates[0]);
+  const lastDate=new Date(sortedDates[sortedDates.length-1]);
+
+  function interpolate(targetDateStr){
+    if(actual[targetDateStr]!=null) return actual[targetDateStr];
+    let before=null,after=null;
+    for(let i=0;i<sortedDates.length;i++){
+      if(sortedDates[i]<=targetDateStr) before=sortedDates[i];
+      else if(after===null) after=sortedDates[i];
+    }
+    if(!before) return actual[after];
+    if(!after)  return actual[before];
+    const t0=new Date(before).getTime(),t1=new Date(after).getTime(),t=new Date(targetDateStr).getTime();
+    const frac=(t-t0)/(t1-t0);
+    return actual[before]+(actual[after]-actual[before])*frac;
+  }
+
+  const result=[];
+  let y=firstDate.getFullYear(), m=firstDate.getMonth();
+  const endY=lastDate.getFullYear(), endM=lastDate.getMonth();
+  let prevVal=null;
+
+  while(y<endY||(y===endY&&m<=endM)){
+    const pad=n=>String(n).padStart(2,'0');
+    const label=`${y}-${pad(m+1)}`;
+    const dateStr=`${y}-${pad(m+1)}-15`;
+    const val=interpolate(dateStr);
+    if(prevVal!==null&&val!=null){
+      const diff=val-prevVal;
+      const pct=prevVal?Math.round(diff/prevVal*10000)/100:0;
+      result.push({label,diff:Math.round(diff),pct});
+    }
+    prevVal=val;
+    m++; if(m>11){m=0;y++;}
+  }
+  return result;
+}
+
+function getYearlyData(){
+  if(entries.length<2) return [];
+  const byYear={};
+  entries.forEach(e=>{const y=e.date.slice(0,4);byYear[y]=e;});
+  const years=Object.keys(byYear).sort();
+  const result=[];
+  for(let i=1;i<years.length;i++){
+    const pv=sumE(byYear[years[i-1]]),cv=sumE(byYear[years[i]]);
+    const pct=pv?Math.round((cv-pv)/pv*1000)/10:0;
+    result.push({year:years[i],pct,diff:cv-pv});
+  }
+  return result;
+}
+
+function getCatPieData(){
+  if(!entries.length) return [];
+  const last=entries[entries.length-1];
+  const total=sumE(last);
+  if(!total) return [];
+  return getCats().map(cat=>{
+    const val=activeAccounts().filter(a=>a.cat===cat).reduce((s,a)=>s+(last.values[a.name]||0),0);
+    return {cat,val,pct:total?Math.round(val/total*1000)/10:0};
+  }).filter(d=>d.val>0).sort((a,b)=>b.val-a.val);
+}
+
+/* ─────────────────────────────────────────
+   Dashboard
+───────────────────────────────────────── */
+function renderDash(){
+  const el=$('pane-dashboard');
+  if(!entries.length){
+    el.innerHTML=`<div class="empty"><p>No entries yet</p><button class="primary" onclick="switchTab('enter')">Enter first values</button></div>`;
+    return;
+  }
+  const last=entries[entries.length-1],prev=entries.length>=2?entries[entries.length-2]:null;
+  const total=sumE(last),diff=prev?total-sumE(prev):null,pct=prev&&sumE(prev)?(total-sumE(prev))/sumE(prev)*100:null;
+  const liquidTotal=accounts.filter(a=>a.liquid&&!a.archived).reduce((s,a)=>s+(last.values[a.name]||0),0);
+  const liquidPrev=prev?accounts.filter(a=>a.liquid&&!a.archived).reduce((s,a)=>s+(prev.values[a.name]||0),0):null;
+  const liquidDiff=liquidPrev!==null?liquidTotal-liquidPrev:null;
+  const avgMo=avgMonthlyChange3m();
+
+  let html='';
+
+  if(selectedCat===null){
+    // ── Two-column top: cards left, by-category right ──
+    let cardsHtml=`<div class="cards">
+      <div class="card"><div class="card-label">Net worth</div><div class="card-value">${fmt(total)}</div></div>
+      ${diff!==null?`<div class="card"><div class="card-label">Since last entry</div><div class="card-value ${diff>=0?'green':'red'}">${fmtD(diff)}</div><div class="card-sub">${diff>=0?'+':''}${pct.toFixed(1)}%</div></div>`:`<div class="card"><div class="card-label">Entries</div><div class="card-value">${entries.length}</div></div>`}
+      <div class="card"><div class="card-label">Last updated</div><div class="card-value" style="font-size:13px;padding-top:4px">${last.date}</div><div class="card-sub" style="font-family:inherit">${entries.length} entr${entries.length===1?'y':'ies'}</div></div>
+      <div class="card"><div class="card-label">Liquid assets</div><div class="card-value" style="color:var(--green)">${fmt(liquidTotal)}</div>${liquidDiff!==null&&liquidDiff!==0?`<div class="card-sub" style="color:${liquidDiff>=0?'var(--green)':'var(--red)'}">${fmtD(liquidDiff)}</div>`:''}</div>
+      ${avgMo!==null?`<div class="card"><div class="card-label">Avg/month (3mo)</div><div class="card-value ${avgMo.dollar>=0?'green':'red'}">${fmtD(avgMo.dollar)}</div><div class="card-sub" style="color:${avgMo.dollar>=0?'var(--green)':'var(--red)'}">${avgMo.pct!==null?(avgMo.pct>=0?'+':'')+avgMo.pct+'% / mo':''}</div></div>`:''}
+    </div>`;
+
+    let catHtml=`<div>
+      <p class="section-label" style="margin-top:0;margin-bottom:7px">By category</p>
+      <div class="list">`;
+    getCats().forEach(cat=>{
+      const accs=activeAccounts().filter(a=>a.cat===cat);
+      const val=accs.reduce((s,a)=>s+(last.values[a.name]||0),0);
+      const pval=prev?accs.reduce((s,a)=>s+(prev.values[a.name]||0),0):null;
+      const cd=pval!==null?val-pval:null;
+      const cpct=pval&&pval>0&&cd!==null?cd/pval*100:null;
+      const safeCat=cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      catHtml+=`<div class="list-row" onclick="selectCat('${safeCat}')" style="cursor:pointer;padding:8px 12px" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='var(--bg)'">
+        <span style="font-size:12px">${esc(cat)} <span style="font-size:10px;color:var(--text2)">›</span></span>
+        <div class="row-right" style="gap:6px">
+          ${cd!==null&&cd!==0?`<span class="row-diff ${cd>=0?'green':'red'}" style="font-size:11px">${fmtD(cd)}</span>`:''}
+          ${cpct!==null&&cd!==0?`<span style="font-size:10px;font-family:var(--mono);color:${cd>=0?'var(--green)':'var(--red)'}">(${cd>=0?'+':''}${cpct.toFixed(1)}%)</span>`:''}
+          <span class="row-val" style="font-size:12px">${fmt(val)}</span>
+        </div>
+      </div>`;
+    });
+
+    // Archived with value
+    const archivedWithValue=archivedAccounts().filter(a=>(last.values[a.name]||0)>0);
+    if(archivedWithValue.length>0){
+      archivedWithValue.forEach(a=>{
+        const val=last.values[a.name]||0;
+        catHtml+=`<div class="list-row" style="opacity:.7;padding:8px 12px">
+          <span style="font-size:12px;color:var(--text2)">${esc(a.name)} <span class="badge badge-archived">archived</span></span>
+          <span class="row-val" style="font-size:12px">${fmt(val)}</span>
+        </div>`;
+      });
+    }
+    catHtml+=`</div></div>`;
+
+    html+=`<div class="dash-top">${cardsHtml}${catHtml}</div>`;
+
+    // ── Charts below ──
+    // Pill toggles for net worth chart
+    const pillBtn=(label,active,fn)=>`<button onclick="${fn}" style="padding:3px 12px;font-size:11px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid ${active?'#1D9E75':'var(--border2)'};background:${active?'#1D9E75':'transparent'};color:${active?'#fff':'var(--text2)'};transition:all .15s">${label}</button>`;
+
+    html+=`<div class="section-label" style="margin-top:4px">Net worth over time</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      ${filterUI_inline()}
+      <div style="margin-left:auto;display:flex;gap:5px">
+        ${pillBtn('Net worth',showActual,"toggleActual()")}
+        ${pillBtn('Forecast',showForecast,"toggleForecast()")}
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:240px"><canvas id="dashLineChart" role="img" aria-label="Net worth over time">Net worth over time.</canvas></div>
+
+    <div class="section-label" style="margin-top:28px">Month-over-month change</div>
+    <div style="display:flex;gap:5px;margin-bottom:10px">
+      ${pillBtn('$',momMode==='$',"setMomMode('$')")}
+      ${pillBtn('%',momMode==='%',"setMomMode('%')")}
+    </div>
+    <div class="chart-wrap" style="height:220px"><canvas id="dashMoMChart" role="img" aria-label="Month over month net worth change">Monthly change.</canvas></div>
+
+    <div class="section-label" style="margin-top:28px">Allocation by category</div>
+    <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <div style="position:relative;width:180px;height:180px;flex-shrink:0"><canvas id="dashPieChart" role="img" aria-label="Category allocation pie chart">Category allocation.</canvas></div>
+      <div id="pie-legend" style="flex:1;min-width:140px"></div>
+    </div>`;
+
+  } else {
+    const fe=getFilteredEntries();
+    const rows=getCatAccountRows(selectedCat,fe);
+    const catCur=rows.reduce((s,r)=>s+r.last,0),catFirst=rows.reduce((s,r)=>s+r.first,0);
+    const catChg=catCur-catFirst,catPct=catFirst?(catChg/catFirst*100):0;
+
+    html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <button onclick="selectCat(null)" style="padding:4px 12px;font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit;border:1px solid var(--border2);background:transparent;color:var(--text2)">← All categories</button>
+      <span style="font-size:16px;font-weight:600">${esc(selectedCat)}</span>
+      ${catChg!==0?`<span style="font-size:13px;font-family:var(--mono);color:${catChg>=0?'var(--green)':'var(--red)'}">${fmtD(catChg)} (${catChg>=0?'+':''}${catPct.toFixed(1)}%)</span>`:''}
+    </div>
+
+    <div class="section-label" style="margin-top:0">${esc(selectedCat)} over time</div>
+    ${filterUI()}
+    <div class="chart-wrap" style="height:220px"><canvas id="dashLineChart" role="img" aria-label="${esc(selectedCat)} over time">${esc(selectedCat)} over time.</canvas></div>
+
+    <div class="section-label" style="margin-top:24px">Accounts breakdown</div>
+    <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <div style="position:relative;width:150px;height:150px;flex-shrink:0"><canvas id="catPieChart" role="img" aria-label="${esc(selectedCat)} accounts pie">Accounts breakdown.</canvas></div>
+      <div id="cat-pie-legend" style="flex:1;min-width:120px"></div>
+    </div>
+
+    <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+      <div style="display:grid;grid-template-columns:1fr 90px 90px 72px;background:var(--bg2);padding:5px 12px;gap:8px;border-bottom:1px solid var(--border)">
+        <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Account</span>
+        <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;text-align:right">Current</span>
+        <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;text-align:right">Change $</span>
+        <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;text-align:right">Chg %</span>
+      </div>
+      ${rows.map((r,i)=>`
+      <div style="display:grid;grid-template-columns:1fr 90px 90px 72px;padding:7px 12px;gap:8px;align-items:center;background:var(--bg);${i>0?'border-top:1px solid var(--border)':''}">
+        <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</span>
+        <span style="font-size:12px;font-family:var(--mono);text-align:right;color:var(--text)">${fmt(r.last)}</span>
+        <span style="font-size:12px;font-family:var(--mono);text-align:right;color:${r.chg===0?'var(--text2)':r.chg>0?'var(--green)':'var(--red)'}">${r.chg===0?'—':fmtD(r.chg)}</span>
+        <span style="font-size:12px;font-family:var(--mono);text-align:right;color:${r.chg===0?'var(--text2)':r.pct>0?'var(--green)':'var(--red)'}">${r.chg===0?'—':(r.pct>=0?'+':'')+r.pct.toFixed(1)+'%'}</span>
+      </div>`).join('')}
+    </div>`;
+
+  }
+
+  el.innerHTML=html;
+  renderDashCharts();
+}
+
+function renderDashCharts(){
+  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const tickColor=dark?'#888':'#666',gridColor=dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
+  const fe=getFilteredEntries();
+
+  // Update pill button states if they exist (without re-rendering whole dash)
+  document.querySelectorAll('[data-pill]').forEach(b=>{
+    const active=(b.dataset.pill==='actual'&&showActual)||(b.dataset.pill==='forecast'&&showForecast)||(b.dataset.pill===momMode);
+    b.style.background=active?'#1D9E75':'transparent';
+    b.style.color=active?'#fff':'var(--text2)';
+    b.style.borderColor=active?'#1D9E75':'var(--border2)';
+  });
+
+  const lineCtx=$('dashLineChart');
+  if(lineCtx){
+    if(dashLineChart){dashLineChart.destroy();dashLineChart=null;}
+    const isCat=selectedCat!==null;
+    const actualVals=isCat?getCatTimeSeries(selectedCat,fe):fe.map(sumE);
+    const color=isCat?'#378ADD':'#1D9E75';
+    const bgAlpha=dark?'0.1':'0.07';
+    const bg=isCat?`rgba(55,138,221,${bgAlpha})`:`rgba(29,158,117,${bgAlpha})`;
+
+    // For category drilldown, always show actual regardless of toggles
+    const showActualLine = isCat ? true : showActual;
+    const forecast=(!isCat&&showForecast)?getForecastDatasets(fe,color):null;
+    const hasForecast=forecast&&forecast.labels&&forecast.labels.length>1;
+
+    // Build label set based on what's visible
+    let allLabels;
+    if(showActualLine&&hasForecast) allLabels=[...new Set([...fe.map(e=>e.date),...forecast.labels])].sort();
+    else if(showActualLine)         allLabels=fe.map(e=>e.date);
+    else if(hasForecast)            allLabels=forecast.labels;
+    else                            allLabels=fe.map(e=>e.date);
+
+    const datasets=[];
+    if(showActualLine){
+      const padded=allLabels.map(l=>{const idx=fe.findIndex(e=>e.date===l);return idx>=0?actualVals[idx]:null;});
+      datasets.push({label:isCat?selectedCat:'Net worth',data:padded,borderColor:color,backgroundColor:bg,fill:true,tension:0.35,pointRadius:fe.length>20?2:4,pointBackgroundColor:color,borderWidth:2,spanGaps:false});
+    }
+    if(hasForecast){
+      const padded=allLabels.map(l=>{const idx=forecast.labels.indexOf(l);return idx>=0?forecast.data[idx]:null;});
+      datasets.push({...forecast.dataset,data:padded,spanGaps:false});
+    }
+
+    const yFmt=v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v;
+    dashLineChart=new Chart(lineCtx,{
+      type:'line',
+      data:{labels:allLabels,datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:c=>c.raw!=null?`${c.dataset.label}: ${fmt(c.raw)}`:null,filter:i=>i.raw!=null}}
+        },
+        scales:{
+          y:{ticks:{callback:yFmt,font:{size:11},color:tickColor},grid:{color:gridColor}},
+          x:{ticks:{font:{size:11},maxRotation:0,color:tickColor,autoSkip:true,maxTicksLimit:10,callback:(val,idx)=>{
+            const label=allLabels[idx]||'';
+            if(!settings.currentAge) return label;
+            const age=dateToAge(label);
+            return age!==null?[label,`age ${age}`]:label;
+          }},grid:{display:false}}
+        }
+      }
+    });
+  }
+
+  // MoM bar chart
+  const momCtx=$('dashMoMChart');
+  if(momCtx){
+    if(dashMoMChart){dashMoMChart.destroy();dashMoMChart=null;}
+    // Use only actual filtered entries — never forecast dates
+    const md=getMoMData(fe);
+    if(md.length){
+      const usePct=momMode==='%';
+      const vals=md.map(d=>usePct?d.pct:d.diff);
+      const maxLabels=18, step=Math.ceil(md.length/maxLabels);
+      const displayLabels=md.map((d,i)=>i%step===0?d.label:'');
+      const yFmtMoM=usePct?v=>`${v>0?'+':''}${v}%`:v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v;
+      dashMoMChart=new Chart(momCtx,{
+        type:'bar',
+        data:{
+          labels:displayLabels,
+          datasets:[{
+            label:usePct?'% change':'$ change',
+            data:vals,
+            backgroundColor:vals.map(v=>v>=0?'rgba(29,158,117,0.7)':'rgba(162,45,45,0.7)'),
+            borderColor:vals.map(v=>v>=0?'#1D9E75':'#a32d2d'),
+            borderWidth:1,borderRadius:2
+          }]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{
+            legend:{display:false},
+            tooltip:{callbacks:{
+              title:(_,[{dataIndex}])=>md[dataIndex].label,
+              label:c=>{const d=md[c.dataIndex];return usePct?[`${d.pct>=0?'+':''}${d.pct}%`,fmtD(d.diff)]:[fmtD(d.diff),`${d.pct>=0?'+':''}${d.pct}%`];}
+            }}
+          },
+          scales:{
+            y:{ticks:{callback:yFmtMoM,font:{size:10},color:tickColor},grid:{color:gridColor},border:{dash:[3,3]}},
+            x:{ticks:{font:{size:10},color:tickColor,maxRotation:45},grid:{display:false}}
+          }
+        }
+      });
+    }
+  }
+
+  // Category pie chart
+  const pieCtx=$('dashPieChart');
+  if(pieCtx){
+    if(dashPieChart){dashPieChart.destroy();dashPieChart=null;}
+    const pd=getCatPieData();
+    if(pd.length){
+      const PIE_COLORS=['#1D9E75','#378ADD','#E24B4A','#EF9F27','#D4537E','#7F77DD','#639922','#BA7517','#1D9E75'];
+      dashPieChart=new Chart(pieCtx,{
+        type:'doughnut',
+        data:{
+          labels:pd.map(d=>d.cat),
+          datasets:[{
+            data:pd.map(d=>d.val),
+            backgroundColor:PIE_COLORS.slice(0,pd.length),
+            borderWidth:2,
+            borderColor:dark?'#1c1c1e':'#ffffff'
+          }]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          cutout:'58%',
+          plugins:{
+            legend:{display:false},
+            tooltip:{callbacks:{
+              label:c=>`${fmt(c.raw)}  (${pd[c.dataIndex].pct}%)`
+            }}
+          }
+        }
+      });
+      // Custom legend
+      const legend=$('pie-legend');
+      if(legend){
+        legend.innerHTML=pd.map((d,i)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:10px">
+            <div style="display:flex;align-items:center;gap:7px;min-width:0">
+              <span style="width:10px;height:10px;border-radius:2px;background:${PIE_COLORS[i]};flex-shrink:0"></span>
+              <span style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.cat)}</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
+              <span style="font-size:11px;color:var(--text2);font-family:var(--mono)">${d.pct}%</span>
+              <span style="font-size:12px;font-family:var(--mono);color:var(--text)">${fmt(d.val)}</span>
+            </div>
+          </div>`).join('');
+      }
+    }
+  }
+
+  // Category drilldown pie (accounts within selected category)
+  const catPieCtx=$('catPieChart');
+  if(catPieCtx&&selectedCat!==null){
+    const PIE_COLORS2=['#1D9E75','#378ADD','#E24B4A','#EF9F27','#D4537E','#7F77DD','#639922','#BA7517','#5dcaa5'];
+    const fe=getFilteredEntries();
+    const lastFe=fe.length?fe[fe.length-1]:null;
+    if(lastFe){
+      const accs=activeAccounts().filter(a=>a.cat===selectedCat);
+      const catData=accs.map(a=>({name:a.name,val:lastFe.values[a.name]||0})).filter(d=>d.val>0);
+      const catTotal=catData.reduce((s,d)=>s+d.val,0);
+      if(catData.length&&catTotal){
+        let catPieInst=Chart.getChart(catPieCtx);
+        if(catPieInst){catPieInst.destroy();}
+        new Chart(catPieCtx,{
+          type:'doughnut',
+          data:{
+            labels:catData.map(d=>d.name),
+            datasets:[{data:catData.map(d=>d.val),backgroundColor:PIE_COLORS2.slice(0,catData.length),borderWidth:2,borderColor:dark?'#1c1c1e':'#ffffff'}]
+          },
+          options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmt(c.raw)}  (${Math.round(c.raw/catTotal*1000)/10}%)`}}}}
+        });
+        const catLeg=$('cat-pie-legend');
+        if(catLeg){
+          catLeg.innerHTML=catData.map((d,i)=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px">
+              <div style="display:flex;align-items:center;gap:6px;min-width:0">
+                <span style="width:9px;height:9px;border-radius:2px;background:${PIE_COLORS2[i]};flex-shrink:0"></span>
+                <span style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)}</span>
+              </div>
+              <div style="display:flex;gap:6px;flex-shrink:0">
+                <span style="font-size:10px;color:var(--text2);font-family:var(--mono)">${Math.round(d.val/catTotal*1000)/10}%</span>
+                <span style="font-size:11px;font-family:var(--mono);color:var(--text)">${fmt(d.val)}</span>
+              </div>
+            </div>`).join('');
+        }
+      }
+    }
+  }
+}
+
+function renderChart(){}
+function renderEnter(){
+  const last=entries.length?entries[entries.length-1]:null;
+  const today=new Date().toISOString().split('T')[0];
+  const el=$('pane-enter');
+  if(!Object.keys(fv).length) fv={};
+
+  let html=`<div class="entry-bar">
+    <div class="field"><label>Date</label><input type="date" id="edate" value="${today}"/></div>
+    <div><div class="live-total-label">Running total</div><div class="live-total" id="live-total">${fmt(0)}</div></div>
+    <div style="margin-left:auto;align-self:flex-end"><button class="primary" onclick="saveEntry()">Save entry</button></div>
+  </div>`;
+
+  getCats().forEach(cat=>{
+    const accs=activeAccounts().filter(a=>a.cat===cat);
+    if(!accs.length) return;
+    html+=`<div class="section-label">${esc(cat)}</div>
+    <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+      <div style="display:grid;grid-template-columns:1fr 88px 88px 72px;background:var(--bg2);padding:5px 12px;gap:8px;border-bottom:1px solid var(--border)">
+        <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Account</span>
+        <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;text-align:right">Last</span>
+        <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;text-align:right">New value</span>
+        <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;text-align:right">Delta</span>
+      </div>`;
+    accs.forEach((a,i)=>{
+      const id='inp-'+a.name.replace(/[^a-z0-9]/gi,'-');
+      const deltaId='delta-'+a.name.replace(/[^a-z0-9]/gi,'-');
+      const lastVal=last?(last.values[a.name]||0):0;
+      html+=`<div id="row-${id}" style="display:grid;grid-template-columns:1fr 88px 88px 72px;align-items:center;padding:7px 12px;gap:8px;background:var(--bg);transition:background .15s;${i<accs.length-1?'border-bottom:1px solid var(--border)':''}">
+        <label for="${id}" style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.name)}</label>
+        <span style="font-size:12px;font-family:var(--mono);color:var(--text2);text-align:right">${lastVal>0?fmt(lastVal):'—'}</span>
+        <div style="display:flex;align-items:center;gap:3px;justify-content:flex-end">
+          <span style="font-size:12px;color:var(--text2)">$</span>
+          <input type="number" id="${id}" data-acc="${esc(a.name)}" data-last="${lastVal}" data-rowid="row-${id}" data-deltaid="${deltaId}"
+            value="" placeholder="0" min="0" step="1" oninput="onInput(this)"
+            style="width:88px;font-size:12px;font-family:var(--mono);text-align:right;padding:3px 6px;background:var(--bg);border:1px solid var(--border2);border-radius:5px;color:var(--text);outline:none"/>
+        </div>
+        <span id="${deltaId}" style="font-size:11px;font-family:var(--mono);text-align:right;color:var(--text2)">—</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+
+  if(!activeAccounts().length){
+    html+=`<div class="empty"><p>No active accounts. Add or restore accounts in Manage accounts.</p></div>`;
+  }
+  el.innerHTML=html;
+}
+
+/* ─────────────────────────────────────────
+   History
+───────────────────────────────────────── */
+function renderHist(){
+  const el=$('pane-history');
+  if(!entries.length){el.innerHTML=`<div class="empty"><p>No entries yet.</p></div>`;return;}
+
+  if(editingEntryIdx!==null){
+    const entry=entries[editingEntryIdx];
+    if(!entry){editingEntryIdx=null;renderHist();return;}
+
+    // Build list of accounts to show: active accounts + any archived/deleted accounts
+    // that had a non-zero value in this entry
+    const activeNames=new Set(activeAccounts().map(a=>a.name));
+    const extraNames=Object.keys(entry.values).filter(n=>!activeNames.has(n)&&(entry.values[n]||0)>0);
+
+    // Group active accounts by category
+    const cats=getCats();
+
+    let html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <button onclick="cancelEdit()" style="padding:4px 12px;font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit;border:1px solid var(--border2);background:transparent;color:var(--text2)">← Back</button>
+      <span style="font-size:15px;font-weight:600">Editing entry</span>
+    </div>
+    <div class="entry-bar">
+      <div class="field"><label>Date</label><input type="date" id="edit-date" value="${entry.date}"/></div>
+      <div><div class="live-total-label">Running total</div><div class="live-total" id="edit-total">${fmt(Object.values(entry.values).reduce((a,b)=>a+b,0))}</div></div>
+      <div style="margin-left:auto;align-self:flex-end"><button class="primary" onclick="saveEditedEntry()">Save changes</button></div>
+    </div>`;
+
+    cats.forEach(cat=>{
+      const accs=activeAccounts().filter(a=>a.cat===cat);
+      if(!accs.length)return;
+      html+=`<div class="section-label">${esc(cat)}</div><div class="list">`;
+      accs.forEach(a=>{
+        const id='edit-'+a.name.replace(/[^a-z0-9]/gi,'-');
+        const val=entry.values[a.name]||0;
+        html+=`<div class="list-row"><label for="${id}" style="font-size:13px">${esc(a.name)}</label><div class="row-right"><span style="font-size:13px;color:var(--text2)">$</span><input type="number" id="${id}" data-acc="${esc(a.name)}" value="${val}" min="0" step="1" oninput="onEditInput(this)"/></div></div>`;
+      });
+      html+=`</div>`;
+    });
+
+    // Archived/deleted accounts that had values in this entry
+    if(extraNames.length>0){
+      html+=`<div class="section-label">Archived / removed accounts <span style="font-size:10px;font-weight:400;color:var(--text2)">(had values on this date)</span></div><div class="list">`;
+      extraNames.forEach(name=>{
+        const id='edit-'+name.replace(/[^a-z0-9]/gi,'-');
+        const val=entry.values[name]||0;
+        html+=`<div class="list-row"><label for="${id}" style="font-size:13px;color:var(--text2)">${esc(name)}</label><div class="row-right"><span style="font-size:13px;color:var(--text2)">$</span><input type="number" id="${id}" data-acc="${esc(name)}" value="${val}" min="0" step="1" oninput="onEditInput(this)"/></div></div>`;
+      });
+      html+=`</div>`;
+    }
+
+    el.innerHTML=html;
+    return;
+  }
+
+  // Normal history list
+  let html=`<div class="section-label">All entries</div><div class="list">`;
+  [...entries].reverse().forEach((entry,i)=>{
+    const idx=entries.length-1-i,prev=idx>0?entries[idx-1]:null;
+    const total=sumE(entry),diff=prev?total-sumE(prev):null;
+    html+=`<div class="list-row">
+      <span style="font-size:13px">${entry.date}</span>
+      <div class="row-right">
+        ${diff!==null?`<span class="row-diff ${diff>=0?'green':'red'}">${fmtD(diff)}</span>`:''}
+        <span class="row-val">${fmt(total)}</span>
+        <button onclick="startEditEntry(${idx})" style="padding:3px 10px;font-size:12px;border-radius:5px;cursor:pointer;font-family:inherit;border:1px solid var(--border2);background:transparent;color:var(--text2)">Edit</button>
+      </div>
+    </div>`;
+  });
+  html+=`</div><div style="margin-top:12px;display:flex;justify-content:flex-end"><button class="danger" id="del-btn" onclick="delLast()">Delete last entry</button></div>`;
+  el.innerHTML=html;
+}
+
+function startEditEntry(idx){
+  editingEntryIdx=idx;
+  renderHist();
+}
+
+function cancelEdit(){
+  editingEntryIdx=null;
+  renderHist();
+}
+
+function onEditInput(inp){
+  const val=parseFloat(inp.value)||0;
+  const name=inp.dataset.acc;
+  // update live total
+  const allInputs=document.querySelectorAll('#pane-history input[data-acc]');
+  let total=0;
+  allInputs.forEach(i=>{total+=parseFloat(i.value)||0;});
+  const el=$('edit-total');if(el)el.textContent=fmt(total);
+}
+
+function saveEditedEntry(){
+  if(editingEntryIdx===null) return;
+  const dateEl=$('edit-date');
+  if(!dateEl||!dateEl.value) return;
+  const allInputs=document.querySelectorAll('#pane-history input[data-acc]');
+  const values={};
+  allInputs.forEach(inp=>{
+    const v=parseFloat(inp.value)||0;
+    if(v>0) values[inp.dataset.acc]=v;
+  });
+  entries[editingEntryIdx]={date:dateEl.value,values};
+  entries.sort((a,b)=>a.date<b.date?-1:1);
+  persist();
+  editingEntryIdx=null;
+  renderHist();
+}
+
+/* ─────────────────────────────────────────
+   Manage accounts
+───────────────────────────────────────── */
+function catSelectHtml(selected){
+  const cats=getCats();
+  if(cats.length===0) return `<option value="__new__">+ New category</option>`;
+  return cats.map(c=>`<option value="${c}"${c===selected?' selected':''}>${esc(c)}</option>`).join('')
+    +`<option value="__new__">+ New category...</option>`;
+}
+
+function renderManage(){
+  const el=$('pane-manage');
+  const active=activeAccounts();
+  const archived=archivedAccounts();
+  const noCats=getCats().length===0;
+
+  let html=`<div id="manage-msg"></div>
+  <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Changes save automatically. Archive accounts you no longer use — history is always preserved.</p>`;
+
+  /* ── Active accounts ── */
+  if(active.length===0){
+    html+=`<div class="empty" style="padding:20px 0"><p>No active accounts.</p></div>`;
+  }else{
+    html+=`<div class="mgmt-header"><span>Account name</span><span>Category</span><span>Liquid</span><span></span></div>`;
+    accounts.forEach((a,idx)=>{
+      if(a.archived)return;
+      html+=`<div class="mgmt-row" id="mgmt-${idx}">
+        <input type="text" value="${esc(a.name)}" data-idx="${idx}" class="name-inp"
+          onblur="handleNameBlur(this)" onkeydown="if(event.key==='Enter')this.blur()"/>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <select data-idx="${idx}" class="cat-sel" onchange="handleCatChange(this,${idx})">
+            ${catSelectHtml(a.cat)}
+          </select>
+          <input type="text" class="new-cat-inp" id="nci-${idx}" placeholder="New category name"
+            onblur="handleNewCatBlur(this,${idx})" onkeydown="if(event.key==='Enter')this.blur()" style="display:none"/>
+        </div>
+        <div class="liq-wrap">
+          <label class="liq-toggle">
+            <input type="checkbox" ${a.liquid?'checked':''} onchange="toggleLiquid(${idx},this.checked)"/>
+            <span class="liq-slider"></span>
+          </label>
+          <span>${a.liquid?'Yes':'No'}</span>
+        </div>
+        <button class="warn" id="archbtn-${idx}" onclick="archiveAccount(${idx})">Archive</button>
+      </div>`;
+    });
+  }
+
+  /* ── Archived accounts ── */
+  if(archived.length>0){
+    html+=`<div class="section-label" style="margin-top:24px">Archived accounts</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">These accounts are hidden from Enter values. All history is fully preserved.</p>
+    <div class="mgmt-header" style="border-radius:8px 8px 0 0"><span>Account name</span><span>Last value</span><span></span></div>`;
+    archived.forEach((a,_)=>{
+      const idx=accounts.indexOf(a);
+      const lv=lastVal(a.name);
+      html+=`<div class="mgmt-row archived-row" id="mgmt-${idx}">
+        <span style="font-size:13px;color:var(--text2)">${esc(a.name)} <span class="badge badge-archived">archived</span></span>
+        <span style="font-size:13px;font-family:var(--mono);color:var(--text2)">${fmt(lv)}</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="ghost" onclick="restoreAccount(${idx})">Restore</button>
+          <button class="danger" id="permdelb-${idx}" onclick="permDelete(${idx})">Delete</button>
+        </div>
+      </div>`;
+    });
+    // close the list border on last archived row
+    html+=`<div style="border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;height:0"></div>`;
+  }
+
+  /* ── Add new account ── */
+  html+=`<div class="section-label" style="margin-top:24px">Add new account</div>
+  <div class="add-form">
+    <div class="add-row">
+      <input type="text" id="new-name" placeholder="Account name" onkeydown="if(event.key==='Enter')addAccount()"/>
+      <select id="new-cat-sel" onchange="toggleAddCat(this)">${catSelectHtml('')}</select>
+    </div>
+    <div id="add-new-cat-wrap" style="${noCats?'':'display:none'}">
+      <input type="text" id="new-cat-name" placeholder="New category name" style="width:100%" onkeydown="if(event.key==='Enter')addAccount()"/>
+    </div>
+    <div><button class="primary" onclick="addAccount()">Add account</button></div>
+  </div>`;
+
+  el.innerHTML=html;
+  if(noCats){const w=$('add-new-cat-wrap');if(w)w.style.display='block';}
+}
+
+function showMsg(html,ms=3500){
+  const el=$('manage-msg');
+  if(el){el.innerHTML=html;if(ms)setTimeout(()=>{const e=$('manage-msg');if(e)e.innerHTML='';},ms);}
+}
+
+/* ── Liquid toggle ── */
+function toggleLiquid(idx,val){
+  const acct=accounts[idx];if(!acct)return;
+  acct.liquid=val;
+  persistAccounts();
+  // update the Yes/No label without full re-render
+  const wrap=document.querySelector(`#mgmt-${idx} .liq-wrap span`);
+  if(wrap)wrap.textContent=val?'Yes':'No';
+}
+
+/* ── Name edit (auto-save on blur) ── */
+function handleNameBlur(inp){
+  const idx=parseInt(inp.dataset.idx);
+  const acct=accounts[idx];if(!acct)return;
+  const newName=inp.value.trim();
+  inp.style.borderColor='';
+  if(!newName){inp.value=acct.name;return;}
+  if(newName===acct.name)return;
+  if(accounts.some((a,i)=>i!==idx&&a.name===newName)){
+    inp.style.borderColor='var(--red)';
+    showMsg(`<div class="msg err">"${esc(newName)}" already exists.</div>`,4000);
+    inp.value=acct.name;return;
+  }
+  const old=acct.name;
+  entries.forEach(e=>{if(old in e.values){e.values[newName]=e.values[old];delete e.values[old];}});
+  acct.name=newName;
+  persistAccounts();persist();fv={};
+  showMsg(`<div class="msg ok">Renamed to "${esc(newName)}".</div>`);
+}
+
+/* ── Category edit (auto-save on change) ── */
+function handleCatChange(sel,idx){
+  const acct=accounts[idx];if(!acct)return;
+  const nci=$('nci-'+idx);
+  if(sel.value==='__new__'){if(nci)nci.style.display='block';return;}
+  if(nci)nci.style.display='none';
+  if(sel.value===acct.cat)return;
+  acct.cat=sel.value;
+  persistAccounts();fv={};
+  showMsg(`<div class="msg ok">Category updated to "${esc(sel.value)}".</div>`);
+  setTimeout(renderManage,500);
+}
+function handleNewCatBlur(inp,idx){
+  const acct=accounts[idx];if(!acct)return;
+  const cat=inp.value.trim();
+  if(!cat)return;
+  acct.cat=cat;
+  persistAccounts();fv={};
+  showMsg(`<div class="msg ok">Moved to "${esc(cat)}".</div>`);
+  setTimeout(renderManage,500);
+}
+function toggleAddCat(sel){
+  const w=$('add-new-cat-wrap');
+  if(w)w.style.display=sel.value==='__new__'?'block':'none';
+}
+
+/* ── Archive ── */
+function archiveAccount(idx){
+  const btn=$('archbtn-'+idx);if(!btn)return;
+  const acct=accounts[idx];if(!acct)return;
+  const lv=lastVal(acct.name);
+
+  if(archiveConfirm!==idx){
+    archiveConfirm=idx;
+    if(lv>0){
+      btn.textContent=`Still shows ${fmt(lv)} — confirm archive?`;
+      showMsg(`<div class="msg warn">This account has ${fmt(lv)} in your last entry. Archiving hides it from Enter values — future entries won't include it. Its past values remain in all history and totals.</div>`,6000);
+    }else{
+      btn.textContent='Confirm archive?';
+    }
+    setTimeout(()=>{archiveConfirm=null;const b=$('archbtn-'+idx);if(b)b.textContent='Archive';},5000);
+    return;
+  }
+  acct.archived=true;
+  archiveConfirm=null;
+  persistAccounts();fv={};
+  renderManage();
+  showMsg(`<div class="msg ok">"${esc(acct.name)}" archived. All history preserved.</div>`);
+}
+
+/* ── Restore ── */
+function restoreAccount(idx){
+  const acct=accounts[idx];if(!acct)return;
+  acct.archived=false;
+  persistAccounts();fv={};
+  renderManage();
+  showMsg(`<div class="msg ok">"${esc(acct.name)}" restored to active accounts.</div>`);
+}
+
+/* ── Permanent delete (archived only) ── */
+function permDelete(idx){
+  const btn=$('permdelb-'+idx);if(!btn)return;
+  const acct=accounts[idx];if(!acct)return;
+  if(permDelConfirm!==idx){
+    permDelConfirm=idx;
+    btn.textContent='Confirm delete?';
+    showMsg(`<div class="msg err">Permanent delete removes the account from your list. Its historical values will still count in your net worth totals but will no longer appear in any category breakdown.</div>`,6000);
+    setTimeout(()=>{permDelConfirm=null;const b=$('permdelb-'+idx);if(b)b.textContent='Delete';},5000);
+    return;
+  }
+  const name=acct.name;
+  accounts.splice(idx,1);
+  permDelConfirm=null;
+  persistAccounts();fv={};
+  renderManage();
+  showMsg(`<div class="msg ok">"${esc(name)}" permanently removed.</div>`);
+}
+
+/* ── Add new account ── */
+function addAccount(){
+  const nameEl=$('new-name'),catSel=$('new-cat-sel'),ncEl=$('new-cat-name');
+  const name=(nameEl?.value||'').trim();
+  const catVal=catSel?.value||'';
+  const cat=catVal==='__new__'?((ncEl?.value||'').trim()):catVal;
+  if(nameEl)nameEl.style.borderColor='';
+  if(ncEl)ncEl.style.borderColor='';
+  if(!name){if(nameEl)nameEl.style.borderColor='var(--red)';return;}
+  if(!cat){if(ncEl)ncEl.style.borderColor='var(--red)';return;}
+  if(accounts.some(a=>a.name===name)){
+    showMsg(`<div class="msg err">"${esc(name)}" already exists.</div>`,4000);return;
+  }
+  accounts.push({cat,name,archived:false,liquid:false});
+  persistAccounts();fv={};
+  renderManage();
+  showMsg(`<div class="msg ok">"${esc(name)}" added to ${esc(cat)}.</div>`);
+}
+
+/* ─────────────────────────────────────────
+   Shared actions
+───────────────────────────────────────── */
+function onInput(inp){
+  const val=parseFloat(inp.value)||0;
+  fv[inp.dataset.acc]=val;
+
+  // Update running total
+  const totalEl=$('live-total');
+  if(totalEl){
+    const all=document.querySelectorAll('#pane-enter input[data-acc]');
+    let t=0; all.forEach(i=>{t+=parseFloat(i.value)||0;});
+    totalEl.textContent=fmt(t);
+  }
+
+  // Row highlight — green tint if value entered, neutral if blank
+  const rowEl=inp.dataset.rowid?$(inp.dataset.rowid):null;
+  if(rowEl){
+    const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+    rowEl.style.background=val>0?(dark?'rgba(29,158,117,0.08)':'rgba(29,158,117,0.05)'):'var(--bg)';
+  }
+
+  // Delta column
+  const deltaEl=inp.dataset.deltaid?$(inp.dataset.deltaid):null;
+  if(deltaEl){
+    const lastVal=parseFloat(inp.dataset.last)||0;
+    if(val===0||inp.value===''){
+      deltaEl.textContent='—';
+      deltaEl.style.color='var(--text2)';
+    } else {
+      const diff=val-lastVal;
+      const pct=lastVal?Math.round(diff/lastVal*1000)/10:null;
+      deltaEl.textContent=diff===0?'—':(diff>0?'+':'')+fmt(diff)+(pct!==null?` (${pct>0?'+':''}${pct}%)`:'');
+      deltaEl.style.color=diff===0?'var(--text2)':diff>0?'var(--green)':'var(--red)';
+    }
+  }
+}
+function saveEntry(){
+  const dateEl=$('edate');if(!dateEl||!dateEl.value)return;
+  const values={};
+  const all=document.querySelectorAll('#pane-enter input[data-acc]');
+  all.forEach(inp=>{const v=parseFloat(inp.value)||0;if(v>0)values[inp.dataset.acc]=v;});
+  entries.push({date:dateEl.value,values});
+  entries.sort((a,b)=>a.date<b.date?-1:1);
+  persist();fv={};switchTab('dashboard');
+}
+function delLast(){
+  const btn=$('del-btn');if(!btn)return;
+  if(!delEntryConfirm){
+    delEntryConfirm=true;btn.textContent='Confirm delete?';
+    setTimeout(()=>{delEntryConfirm=false;const b=$('del-btn');if(b)b.textContent='Delete last entry';},3000);
+    return;
+  }
+  entries.pop();delEntryConfirm=false;persist();renderHist();
+}
+
+/* ─────────────────────────────────────────
+   Forecast helpers
+───────────────────────────────────────── */
+function linReg(points){
+  // points = [{x: days_from_epoch, y: value}]
+  const n=points.length;
+  if(n<2) return null;
+  let sx=0,sy=0,sxy=0,sx2=0;
+  points.forEach(p=>{sx+=p.x;sy+=p.y;sxy+=p.x*p.y;sx2+=p.x*p.x;});
+  const denom=n*sx2-sx*sx;
+  if(!denom) return null;
+  const m=(n*sxy-sx*sy)/denom;
+  const b=(sy-m*sx)/n;
+  return {m,b};
+}
+
+function dateToDay(dateStr){
+  return Math.floor(new Date(dateStr).getTime()/(1000*60*60*24));
+}
+
+function dateToAge(dateStr){
+  if(!settings.currentAge) return null;
+  const today=new Date();
+  const date=new Date(dateStr);
+  const yearsDiff=(date.getTime()-today.getTime())/(1000*60*60*24*365.25);
+  const age=Math.round(Number(settings.currentAge)+yearsDiff);
+  return age>0?age:null;
+}
+
+function getForecastDatasets(fe,color){
+  if(!fe.length||!settings.forecastYears||settings.forecastYears<=0) return [];
+
+  // Determine lookback window
+  const lastEntry=fe[fe.length-1];
+  const lastDay=dateToDay(lastEntry.date);
+  const lookbackDays=settings.lookbackMonths*30.44;
+  const cutoffDay=lastDay-lookbackDays;
+  const window=fe.filter(e=>dateToDay(e.date)>=cutoffDay);
+  if(window.length<2) return [];
+
+  const points=window.map(e=>({x:dateToDay(e.date),y:sumE(e)}));
+  const reg=linReg(points);
+  if(!reg) return [];
+
+  // Generate forecast points monthly
+  const forecastDays=Math.round(settings.forecastYears*365);
+  const stepDays=30;
+  const forecastLabels=[];
+  const forecastVals=[];
+
+  // Start from last actual point
+  for(let d=0;d<=forecastDays;d+=stepDays){
+    const day=lastDay+d;
+    const val=reg.m*day+reg.b;
+    if(val<0) break; // don't project negative net worth
+    const date=new Date(day*1000*60*60*24);
+    forecastLabels.push(date.toISOString().split('T')[0]);
+    forecastVals.push(Math.round(val));
+  }
+
+  if(!forecastLabels.length) return [];
+
+  // Prepend last actual value so lines connect
+  const connectVal=Math.round(reg.m*lastDay+reg.b);
+
+  return {
+    labels:forecastLabels,
+    data:[connectVal,...forecastVals.slice(1)],
+    dataset:{
+      label:'Forecast',
+      data:[connectVal,...forecastVals.slice(1)],
+      borderColor:color==='#378ADD'?'rgba(55,138,221,0.5)':'rgba(29,158,117,0.45)',
+      backgroundColor:'transparent',
+      borderDash:[6,4],
+      borderWidth:2,
+      pointRadius:0,
+      pointHoverRadius:4,
+      fill:false,
+      tension:0.2
+    }
+  };
+}
+
+/* ─────────────────────────────────────────
+   Settings
+───────────────────────────────────────── */
+function renderSettings(){
+  const el=$('pane-settings');
+  const lbOptions=[
+    [3,'3 months'],[6,'6 months'],[12,'1 year'],[24,'2 years'],[36,'3 years']
+  ];
+  el.innerHTML=`
+  <p style="font-size:13px;color:var(--text2);margin-bottom:20px">These settings affect the forecast line and insights on the dashboard.</p>
+
+  <div class="section-label">Forecast</div>
+  <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)">
+      <div>
+        <p style="font-size:13px;font-weight:500">Forecast years</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:2px">How far into the future to project</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="number" id="s-forecast-years" value="${settings.forecastYears}" min="1" max="30" step="1"
+          style="width:70px;text-align:center;font-size:14px;font-weight:500"
+          oninput="saveSetting('forecastYears',parseFloat(this.value)||3)"/>
+        <span style="font-size:13px;color:var(--text2)">yrs</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg)">
+      <div>
+        <p style="font-size:13px;font-weight:500">Lookback horizon</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:2px">Data window used to compute the trend</p>
+      </div>
+      <select id="s-lookback" onchange="saveSetting('lookbackMonths',parseInt(this.value))"
+        style="font-size:13px;padding:6px 10px">
+        ${lbOptions.map(([v,l])=>`<option value="${v}"${settings.lookbackMonths===v?' selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:20px">Personal</div>
+  <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)">
+      <div>
+        <p style="font-size:13px;font-weight:500">Current age</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:2px">Used for future insights</p>
+      </div>
+      <input type="number" id="s-age" value="${settings.currentAge||''}" min="1" max="120" placeholder="—"
+        style="width:70px;text-align:center;font-size:14px"
+        oninput="saveSetting('currentAge',parseInt(this.value)||'')"/>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg)">
+      <div>
+        <p style="font-size:13px;font-weight:500">Net worth goal</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:2px">Optional target to track against</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span style="font-size:13px;color:var(--text2)">$</span>
+        <input type="number" id="s-goal" value="${settings.goalAmount||''}" min="0" step="10000" placeholder="0"
+          style="width:110px;text-align:right;font-size:13px;font-family:var(--mono)"
+          oninput="saveSetting('goalAmount',parseFloat(this.value)||'')"/>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-msg" style="margin-top:14px"></div>`;
+}
+
+function saveSetting(key,val){
+  settings[key]=val;
+  persistSettings();
+  // re-render dashboard charts if visible so forecast updates live
+  if(currentTab==='dashboard') renderDashCharts();
+  const el=$('settings-msg');
+  if(el){el.innerHTML=`<div class="msg ok">Saved.</div>`;setTimeout(()=>{if($('settings-msg'))$('settings-msg').innerHTML='';},2000);}
+}
+
+/* ─────────────────────────────────────────
+   Supabase client
+───────────────────────────────────────── */
+const SUPA_URL='https://riynauzutjgxevipdlfx.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeW5hdXp1dGpneGV2aXBkbGZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNTMxMjQsImV4cCI6MjA5MTkyOTEyNH0.3WQDaZrBsvSWA6_OHjHOqU1vSKxG0dwkGw2ClabKnXY';
+const supabase=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+
+let currentUser=null;
+let authTab='login';
+
+/* ─────────────────────────────────────────
+   Auth UI
+───────────────────────────────────────── */
+function setAuthTab(t){
+  authTab=t;
+  document.querySelectorAll('.auth-tab').forEach((el,i)=>el.classList.toggle('active',['login','signup'][i]===t));
+  $('auth-btn').textContent=t==='login'?'Sign in':'Create account';
+  $('auth-forgot-wrap').style.display=t==='login'?'':'none';
+  $('auth-err').textContent='';$('auth-ok').textContent='';
+}
+
+async function submitAuth(){
+  const email=($('auth-email').value||'').trim();
+  const password=($('auth-password').value||'').trim();
+  $('auth-err').textContent='';$('auth-ok').textContent='';
+  if(!email||!password){$('auth-err').textContent='Please enter email and password.';return;}
+  $('auth-btn').textContent='...';$('auth-btn').disabled=true;
+  try{
+    if(authTab==='login'){
+      const {error}=await supabase.auth.signInWithPassword({email,password});
+      if(error) throw error;
+    } else {
+      const {error}=await supabase.auth.signUp({email,password});
+      if(error) throw error;
+      $('auth-ok').textContent='Account created! Check your email to confirm.';
+      $('auth-btn').textContent='Create account';$('auth-btn').disabled=false;
+      return;
+    }
+  } catch(e){
+    $('auth-err').textContent=e.message||'Something went wrong.';
+    $('auth-btn').textContent=authTab==='login'?'Sign in':'Create account';
+    $('auth-btn').disabled=false;
+  }
+}
+
+async function forgotPassword(){
+  const email=($('auth-email').value||'').trim();
+  if(!email){$('auth-err').textContent='Enter your email above first.';return;}
+  const {error}=await supabase.auth.resetPasswordForEmail(email);
+  if(error) $('auth-err').textContent=error.message;
+  else $('auth-ok').textContent='Password reset email sent!';
+}
+
+async function signOut(){
+  await supabase.auth.signOut();
+  currentUser=null;
+  entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
+  showAuth();
+}
+
+function showAuth(){
+  $('auth-overlay').style.display='flex';
+  $('app').style.display='none';
+}
+
+function showApp(user){
+  currentUser=user;
+  $('auth-overlay').style.display='none';
+  $('app').style.display='block';
+  $('user-email').textContent=user.email;
+}
+
+/* ─────────────────────────────────────────
+   Supabase data layer
+───────────────────────────────────────── */
+function setSyncBar(msg,color='var(--text2)'){
+  const el=$('sync-bar');
+  if(el){el.textContent=msg;el.style.color=color;}
+}
+
+async function loadFromSupabase(){
+  if(!currentUser) return;
+  setSyncBar('Loading...');
+  try{
+    // Load accounts
+    const {data:accts,error:ae}=await supabase.from('accounts').select('*').eq('user_id',currentUser.id).order('sort_order');
+    if(ae) throw ae;
+
+    // Load entries + values
+    const {data:ents,error:ee}=await supabase.from('entries').select('id,entry_date').eq('user_id',currentUser.id).order('entry_date');
+    if(ee) throw ee;
+
+    let entryValues=[];
+    if(ents.length>0){
+      const entryIds=ents.map(e=>e.id);
+      const {data:vals,error:ve}=await supabase.from('entry_values').select('*').in('entry_id',entryIds);
+      if(ve) throw ve;
+      entryValues=vals;
+    }
+
+    // Load settings
+    const {data:s}=await supabase.from('user_settings').select('*').eq('user_id',currentUser.id).single();
+
+    // Map to app format
+    if(accts&&accts.length>0){
+      accounts=accts.map(a=>({name:a.name,cat:a.category,liquid:a.liquid,archived:a.archived,_id:a.id}));
+    } else {
+      // First time user — seed defaults
+      accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+      await saveAccountsToSupabase();
+    }
+
+    entries=ents.map(e=>{
+      const vals=entryValues.filter(v=>v.entry_id===e.id);
+      const values={};
+      vals.forEach(v=>{values[v.account_name]=parseFloat(v.value)||0;});
+      return {date:e.entry_date,values,_id:e.id};
+    });
+
+    if(s){
+      settings={
+        forecastYears:s.forecast_years||3,
+        lookbackMonths:s.lookback_months||12,
+        currentAge:s.current_age||'',
+        goalAmount:s.goal_amount||''
+      };
+    }
+
+    // Migrate any localStorage data if this is a fresh Supabase account
+    await migrateLocalStorage();
+
+    setSyncBar('');
+  } catch(e){
+    console.error('Load error:',e);
+    setSyncBar('Error loading data — using local cache','var(--red)');
+    load();loadSettings();
+  }
+}
+
+async function migrateLocalStorage(){
+  // Only migrate if Supabase has no entries but localStorage does
+  if(entries.length>0) return;
+  const local=localStorage.getItem('nw_entries');
+  if(!local) return;
+  try{
+    const localEntries=JSON.parse(local);
+    if(!localEntries||localEntries.length===0) return;
+    setSyncBar('Migrating your existing data to the cloud...');
+    for(const e of localEntries){
+      await saveEntryToSupabase(e);
+    }
+    await loadFromSupabase();
+    localStorage.removeItem('nw_entries');
+    setSyncBar('Data migrated successfully','var(--green)');
+    setTimeout(()=>setSyncBar(''),3000);
+  } catch(err){
+    console.error('Migration error:',err);
+    setSyncBar('');
+  }
+}
+
+async function saveAccountsToSupabase(){
+  if(!currentUser) return;
+  try{
+    // Delete existing and re-insert (simplest approach for account management)
+    await supabase.from('accounts').delete().eq('user_id',currentUser.id);
+    const rows=accounts.map((a,i)=>({
+      user_id:currentUser.id,
+      name:a.name,
+      category:a.cat,
+      liquid:a.liquid||false,
+      archived:a.archived||false,
+      sort_order:i
+    }));
+    const {error}=await supabase.from('accounts').insert(rows);
+    if(error) throw error;
+  } catch(e){console.error('Save accounts error:',e);}
+}
+
+async function saveEntryToSupabase(entry){
+  if(!currentUser) return;
+  try{
+    // Upsert entry row
+    const {data:entRow,error:ee}=await supabase.from('entries')
+      .upsert({user_id:currentUser.id,entry_date:entry.date},{onConflict:'user_id,entry_date'})
+      .select().single();
+    if(ee) throw ee;
+
+    // Delete old values and re-insert
+    await supabase.from('entry_values').delete().eq('entry_id',entRow.id);
+    const valRows=Object.entries(entry.values)
+      .filter(([,v])=>v>0)
+      .map(([name,value])=>({entry_id:entRow.id,account_name:name,value}));
+    if(valRows.length>0){
+      const {error:ve}=await supabase.from('entry_values').insert(valRows);
+      if(ve) throw ve;
+    }
+    return entRow.id;
+  } catch(e){console.error('Save entry error:',e);throw e;}
+}
+
+async function deleteEntryFromSupabase(date){
+  if(!currentUser) return;
+  try{
+    await supabase.from('entries').delete().eq('user_id',currentUser.id).eq('entry_date',date);
+  } catch(e){console.error('Delete entry error:',e);}
+}
+
+async function saveSettingsToSupabase(){
+  if(!currentUser) return;
+  try{
+    await supabase.from('user_settings').upsert({
+      user_id:currentUser.id,
+      forecast_years:settings.forecastYears,
+      lookback_months:settings.lookbackMonths,
+      current_age:settings.currentAge||null,
+      goal_amount:settings.goalAmount||null,
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
+  } catch(e){console.error('Save settings error:',e);}
+}
+
+/* ─────────────────────────────────────────
+   Override persist functions to use Supabase
+───────────────────────────────────────── */
+function persist(){
+  // Keep localStorage as offline fallback
+  try{localStorage.setItem('nw_entries',JSON.stringify(entries));}catch(e){}
+}
+function persistAccounts(){
+  try{localStorage.setItem('nw_accounts',JSON.stringify(accounts));}catch(e){}
+  if(currentUser) saveAccountsToSupabase();
+}
+function persistSettings(){
+  try{localStorage.setItem('nw_settings',JSON.stringify(settings));}catch(e){}
+  if(currentUser) saveSettingsToSupabase();
+}
+
+/* Override saveEntry to write to Supabase */
+async function saveEntry(){
+  const dateEl=$('edate');if(!dateEl||!dateEl.value)return;
+  const values={};
+  const all=document.querySelectorAll('#pane-enter input[data-acc]');
+  all.forEach(inp=>{const v=parseFloat(inp.value)||0;if(v>0)values[inp.dataset.acc]=v;});
+  const entry={date:dateEl.value,values};
+
+  // Update local state
+  const existing=entries.findIndex(e=>e.date===entry.date);
+  if(existing>=0) entries[existing]=entry;
+  else entries.push(entry);
+  entries.sort((a,b)=>a.date<b.date?-1:1);
+  persist();
+
+  // Save to Supabase
+  if(currentUser){
+    setSyncBar('Saving...');
+    try{
+      await saveEntryToSupabase(entry);
+      setSyncBar('Saved ✓','var(--green)');
+      setTimeout(()=>setSyncBar(''),2000);
+    } catch(e){
+      setSyncBar('Saved locally (sync failed)','var(--amber)');
+    }
+  }
+  fv={};switchTab('dashboard');
+}
+
+/* Override delLast to also delete from Supabase */
+async function delLast(){
+  const btn=$('del-btn');if(!btn)return;
+  if(!delEntryConfirm){
+    delEntryConfirm=true;btn.textContent='Confirm delete?';
+    setTimeout(()=>{delEntryConfirm=false;const b=$('del-btn');if(b)b.textContent='Delete last entry';},3000);
+    return;
+  }
+  const last=entries[entries.length-1];
+  if(last&&currentUser) await deleteEntryFromSupabase(last.date);
+  entries.pop();delEntryConfirm=false;persist();renderHist();
+}
+
+/* Override saveEditedEntry to sync */
+async function saveEditedEntry(){
+  if(editingEntryIdx===null) return;
+  const dateEl=$('edit-date');
+  if(!dateEl||!dateEl.value) return;
+  const allInputs=document.querySelectorAll('#pane-history input[data-acc]');
+  const values={};
+  allInputs.forEach(inp=>{const v=parseFloat(inp.value)||0;if(v>0)values[inp.dataset.acc]=v;});
+  const oldDate=entries[editingEntryIdx].date;
+  const entry={date:dateEl.value,values};
+
+  // If date changed, delete old entry
+  if(oldDate!==entry.date&&currentUser) await deleteEntryFromSupabase(oldDate);
+
+  entries[editingEntryIdx]=entry;
+  entries.sort((a,b)=>a.date<b.date?-1:1);
+  persist();
+
+  if(currentUser){
+    setSyncBar('Saving...');
+    try{
+      await saveEntryToSupabase(entry);
+      setSyncBar('Saved ✓','var(--green)');
+      setTimeout(()=>setSyncBar(''),2000);
+    }catch(e){setSyncBar('Saved locally (sync failed)','var(--amber)');}
+  }
+  editingEntryIdx=null;renderHist();
+}
+
+/* ─────────────────────────────────────────
+   Boot
+───────────────────────────────────────── */
+// Listen for auth state changes
+supabase.auth.onAuthStateChange(async(event,session)=>{
+  if(session&&session.user){
+    showApp(session.user);
+    await loadFromSupabase();
+    loadSettings();
+    renderDash();
+  } else {
+    showAuth();
+  }
+});
+
+// Check for existing session on page load
+(async()=>{
+  const {data:{session}}=await supabase.auth.getSession();
+  if(session&&session.user){
+    showApp(session.user);
+    await loadFromSupabase();
+    loadSettings();
+    renderDash();
+  }
+  // If no session, auth overlay is already visible
+})();
+</script>
+</body>
+</html>
