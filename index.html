@@ -1397,7 +1397,7 @@ function saveSetting(key,val){
 ───────────────────────────────────────── */
 const SUPA_URL='https://riynauzutjgxevipdlfx.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeW5hdXp1dGpneGV2aXBkbGZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNTMxMjQsImV4cCI6MjA5MTkyOTEyNH0.3WQDaZrBsvSWA6_OHjHOqU1vSKxG0dwkGw2ClabKnXY';
-const supabase=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
 
 let currentUser=null;
 // authTab declared in inline script above
@@ -1421,10 +1421,10 @@ async function submitAuth(){
   $('auth-btn').textContent='...';$('auth-btn').disabled=true;
   try{
     if(authTab==='login'){
-      const {error}=await supabase.auth.signInWithPassword({email,password});
+      const {error}=await sb.auth.signInWithPassword({email,password});
       if(error) throw error;
     } else {
-      const {error}=await supabase.auth.signUp({email,password});
+      const {error}=await sb.auth.signUp({email,password});
       if(error) throw error;
       $('auth-ok').textContent='Account created! Check your email to confirm.';
       $('auth-btn').textContent='Create account';$('auth-btn').disabled=false;
@@ -1440,13 +1440,13 @@ async function submitAuth(){
 async function forgotPassword(){
   const email=($('auth-email').value||'').trim();
   if(!email){$('auth-err').textContent='Enter your email above first.';return;}
-  const {error}=await supabase.auth.resetPasswordForEmail(email);
+  const {error}=await sb.auth.resetPasswordForEmail(email);
   if(error) $('auth-err').textContent=error.message;
   else $('auth-ok').textContent='Password reset email sent!';
 }
 
 async function signOut(){
-  await supabase.auth.signOut();
+  await sb.auth.signOut();
   currentUser=null;
   entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
   showAuth();
@@ -1477,23 +1477,23 @@ async function loadFromSupabase(){
   setSyncBar('Loading...');
   try{
     // Load accounts
-    const {data:accts,error:ae}=await supabase.from('accounts').select('*').eq('user_id',currentUser.id).order('sort_order');
+    const {data:accts,error:ae}=await sb.from('accounts').select('*').eq('user_id',currentUser.id).order('sort_order');
     if(ae) throw ae;
 
     // Load entries + values
-    const {data:ents,error:ee}=await supabase.from('entries').select('id,entry_date').eq('user_id',currentUser.id).order('entry_date');
+    const {data:ents,error:ee}=await sb.from('entries').select('id,entry_date').eq('user_id',currentUser.id).order('entry_date');
     if(ee) throw ee;
 
     let entryValues=[];
     if(ents.length>0){
       const entryIds=ents.map(e=>e.id);
-      const {data:vals,error:ve}=await supabase.from('entry_values').select('*').in('entry_id',entryIds);
+      const {data:vals,error:ve}=await sb.from('entry_values').select('*').in('entry_id',entryIds);
       if(ve) throw ve;
       entryValues=vals;
     }
 
     // Load settings
-    const {data:s}=await supabase.from('user_settings').select('*').eq('user_id',currentUser.id).single();
+    const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).single();
 
     // Map to app format
     if(accts&&accts.length>0){
@@ -1557,7 +1557,7 @@ async function saveAccountsToSupabase(){
   if(!currentUser) return;
   try{
     // Delete existing and re-insert (simplest approach for account management)
-    await supabase.from('accounts').delete().eq('user_id',currentUser.id);
+    await sb.from('accounts').delete().eq('user_id',currentUser.id);
     const rows=accounts.map((a,i)=>({
       user_id:currentUser.id,
       name:a.name,
@@ -1566,7 +1566,7 @@ async function saveAccountsToSupabase(){
       archived:a.archived||false,
       sort_order:i
     }));
-    const {error}=await supabase.from('accounts').insert(rows);
+    const {error}=await sb.from('accounts').insert(rows);
     if(error) throw error;
   } catch(e){console.error('Save accounts error:',e);}
 }
@@ -1575,18 +1575,18 @@ async function saveEntryToSupabase(entry){
   if(!currentUser) return;
   try{
     // Upsert entry row
-    const {data:entRow,error:ee}=await supabase.from('entries')
+    const {data:entRow,error:ee}=await sb.from('entries')
       .upsert({user_id:currentUser.id,entry_date:entry.date},{onConflict:'user_id,entry_date'})
       .select().single();
     if(ee) throw ee;
 
     // Delete old values and re-insert
-    await supabase.from('entry_values').delete().eq('entry_id',entRow.id);
+    await sb.from('entry_values').delete().eq('entry_id',entRow.id);
     const valRows=Object.entries(entry.values)
       .filter(([,v])=>v>0)
       .map(([name,value])=>({entry_id:entRow.id,account_name:name,value}));
     if(valRows.length>0){
-      const {error:ve}=await supabase.from('entry_values').insert(valRows);
+      const {error:ve}=await sb.from('entry_values').insert(valRows);
       if(ve) throw ve;
     }
     return entRow.id;
@@ -1596,14 +1596,14 @@ async function saveEntryToSupabase(entry){
 async function deleteEntryFromSupabase(date){
   if(!currentUser) return;
   try{
-    await supabase.from('entries').delete().eq('user_id',currentUser.id).eq('entry_date',date);
+    await sb.from('entries').delete().eq('user_id',currentUser.id).eq('entry_date',date);
   } catch(e){console.error('Delete entry error:',e);}
 }
 
 async function saveSettingsToSupabase(){
   if(!currentUser) return;
   try{
-    await supabase.from('user_settings').upsert({
+    await sb.from('user_settings').upsert({
       user_id:currentUser.id,
       forecast_years:settings.forecastYears,
       lookback_months:settings.lookbackMonths,
@@ -1705,7 +1705,7 @@ async function saveEditedEntry(){
    Boot
 ───────────────────────────────────────── */
 // Listen for auth state changes
-supabase.auth.onAuthStateChange(async(event,session)=>{
+sb.auth.onAuthStateChange(async(event,session)=>{
   if(session&&session.user){
     showApp(session.user);
     await loadFromSupabase();
@@ -1718,7 +1718,7 @@ supabase.auth.onAuthStateChange(async(event,session)=>{
 
 // Check for existing session on page load
 (async()=>{
-  const {data:{session}}=await supabase.auth.getSession();
+  const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
     showApp(session.user);
     await loadFromSupabase();
