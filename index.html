@@ -1731,6 +1731,7 @@ async function forgotPassword(){
 }
 
 async function signOut(){
+  window._explicitSignOut=true;
   sessionStorage.clear();
   await sb.auth.signOut();
 }
@@ -2217,11 +2218,12 @@ sb.auth.onAuthStateChange(async(event, session) => {
     showResetPassword();
   } else if((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && !_recoverySession && !currentUser){
     if(session?.user) await bootUser(session.user);
-  } else if(event === 'SIGNED_OUT'){
+  } else if(event === 'SIGNED_OUT' && window._explicitSignOut){
     _recoverySession=null;
     currentUser=null;
     entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
     window._accessGranted=false;
+    window._explicitSignOut=false;
     sessionStorage.removeItem('nw_paywall');
     window.location.hash='';
     showAuth();
