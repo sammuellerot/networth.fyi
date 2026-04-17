@@ -5,6 +5,9 @@
       "maxDuration": 10
     }
   },
+  "rewrites": [
+    { "source": "/app", "destination": "/index.html" }
+  ],
   "redirects": [
     { "source": "/", "destination": "/landing.html", "permanent": false }
   ]
