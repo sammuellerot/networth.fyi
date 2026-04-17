@@ -1465,6 +1465,7 @@ async function forgotPassword(){
 }
 
 async function signOut(){
+  _booting=false;
   await sb.auth.signOut();
   currentUser=null;
   entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
@@ -1879,7 +1880,10 @@ async function saveEditedEntry(){
 /* ─────────────────────────────────────────
    Boot
 ───────────────────────────────────────── */
+let _booting=false;
 async function bootUser(user){
+  if(_booting) return;
+  _booting=true;
   currentUser=user;
   $('auth-overlay').style.display='none';
   $('user-email').textContent=user.email;
@@ -1897,6 +1901,7 @@ async function bootUser(user){
     hidePaywall();
     renderDash();
   }
+  _booting=false;
 }
 
 // Listen for auth state changes
