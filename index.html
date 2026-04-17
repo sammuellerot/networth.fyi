@@ -1996,16 +1996,22 @@ document.addEventListener('visibilitychange',async()=>{
   // Handle password recovery token in URL
   if(params.get('type')==='recovery' && params.get('access_token')){
     try{
-      // Exchange the token for a session so updateUser works
-      const {data,error} = await sb.auth.setSession({
-        access_token: params.get('access_token'),
-        refresh_token: params.get('refresh_token')||''
+      // Use verifyOtp to exchange the token for a valid session
+      const {error} = await sb.auth.verifyOtp({
+        token_hash: params.get('access_token'),
+        type: 'recovery'
       });
       if(error) throw error;
       showResetPassword();
     } catch(e){
       console.error('Recovery token error:',e);
-      showResetPassword(); // Show form anyway, error will appear on submit
+      // Try getting existing session — Supabase may have already set it
+      const {data:{session}} = await sb.auth.getSession();
+      if(session){
+        showResetPassword();
+      } else {
+        showResetPassword(); // Show form, error will appear on submit
+      }
     }
     return;
   }
