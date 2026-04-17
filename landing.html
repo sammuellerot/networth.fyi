@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Networth.fyi — Track your net worth. Own your data.</title>
+<meta name="description" content="Manual net worth tracking with zero bank connections. No OAuth tokens. No data brokers. Just your numbers, beautifully visualized."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0a0b;
+  --bg2:#111113;
+  --bg3:#1a1a1d;
+  --text:#f0ede8;
+  --text2:#8a8580;
+  --text3:#5a5550;
+  --green:#1D9E75;
+  --green-dim:rgba(29,158,117,0.12);
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* Grain */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:.4;}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;padding:20px 48px;display:flex;justify-content:space-between;align-items:center;z-index:100;border-bottom:1px solid var(--border);background:rgba(10,10,11,0.85);backdrop-filter:blur(12px);}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--text);text-decoration:none;}
+.nav-links{display:flex;gap:28px;align-items:center;}
+.nav-links a{font-size:13px;color:var(--text2);text-decoration:none;transition:color .15s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{background:var(--green);color:#fff !important;padding:8px 20px;border-radius:7px;font-size:13px;font-weight:500;text-decoration:none;transition:opacity .15s;}
+.nav-cta:hover{opacity:.88;}
+@media(max-width:600px){nav{padding:16px 20px;}.nav-links{display:none;}}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:120px 24px 80px;position:relative;}
+.hero::after{content:'';position:absolute;width:700px;height:700px;background:radial-gradient(circle,rgba(29,158,117,0.07) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-60%);pointer-events:none;}
+.hero-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);font-weight:500;margin-bottom:24px;border:1px solid rgba(29,158,117,0.3);padding:5px 14px;border-radius:20px;background:rgba(29,158,117,0.06);display:inline-block;opacity:0;animation:fadeUp .6s .1s forwards;}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(48px,7vw,88px);line-height:1.02;letter-spacing:-2px;color:var(--text);margin-bottom:24px;max-width:820px;opacity:0;animation:fadeUp .7s .2s forwards;}
+.hero-title em{font-style:italic;color:var(--green);}
+.hero-sub{font-size:17px;line-height:1.65;color:var(--text2);max-width:500px;margin-bottom:44px;font-weight:300;opacity:0;animation:fadeUp .7s .35s forwards;}
+.hero-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .7s .45s forwards;}
+.btn-primary{background:var(--green);color:#fff;padding:13px 30px;border-radius:9px;font-size:14px;font-weight:500;text-decoration:none;transition:all .15s;font-family:'DM Sans',sans-serif;}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px);}
+.btn-ghost{color:var(--text2);font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .15s;}
+.btn-ghost:hover{color:var(--text);}
+.hero-note{margin-top:16px;font-size:12px;color:var(--text3);opacity:0;animation:fadeUp .6s .55s forwards;}
+
+/* Ticker */
+.ticker{margin-top:64px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .6s .65s forwards;position:relative;z-index:1;}
+.ticker-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-family:var(--mono);min-width:130px;}
+.t-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:6px;}
+.t-value{font-size:18px;color:var(--text);font-weight:500;margin-bottom:3px;}
+.t-change{font-size:11px;}
+.t-change.up{color:var(--green);}
+.t-change.down{color:#f09595;}
+
+/* Sections */
+.section{padding:96px 48px;max-width:1100px;margin:0 auto;}
+@media(max-width:700px){.section{padding:64px 24px;}}
+.section-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--green);font-weight:500;margin-bottom:16px;}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:clamp(32px,4.5vw,52px);line-height:1.1;letter-spacing:-1px;color:var(--text);margin-bottom:18px;}
+.section-sub{font-size:16px;line-height:1.65;color:var(--text2);max-width:540px;font-weight:300;}
+.divider{border:none;border-top:1px solid var(--border);}
+
+/* Privacy cards */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:48px;}
+@media(max-width:640px){.grid-2{grid-template-columns:1fr;}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px;transition:border-color .2s;}
+.card:hover{border-color:var(--border2);}
+.card-icon{width:40px;height:40px;background:var(--green-dim);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:16px;}
+.card h3{font-size:15px;font-weight:500;margin-bottom:8px;}
+.card p{font-size:13px;color:var(--text2);line-height:1.65;}
+
+/* Features grid */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-top:48px;}
+@media(max-width:760px){.features-grid{grid-template-columns:1fr;}}
+.feature{background:var(--bg);padding:32px 28px;transition:background .15s;}
+.feature:hover{background:var(--bg2);}
+.feature-num{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:18px;letter-spacing:.06em;}
+.feature h3{font-size:14px;font-weight:500;margin-bottom:10px;}
+.feature p{font-size:13px;color:var(--text2);line-height:1.65;}
+
+/* Pricing */
+.pricing-wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:48px;max-width:580px;}
+@media(max-width:560px){.pricing-wrap{grid-template-columns:1fr;}}
+.price-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;position:relative;transition:border-color .2s,transform .2s;}
+.price-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.price-card.featured{border-color:var(--green);}
+.price-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;}
+.price-name{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;}
+.price-amount{font-family:'DM Sans',sans-serif;font-size:52px;font-weight:600;line-height:1;letter-spacing:-2px;color:var(--text);margin-bottom:4px;}
+.price-amount sup{font-size:20px;vertical-align:super;letter-spacing:0;font-weight:500;}
+.price-period{font-size:11px;color:var(--text3);margin-bottom:24px;}
+.price-list{list-style:none;margin-bottom:24px;}
+.price-list li{font-size:12px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.price-list li::before{content:'✓';color:var(--green);font-size:11px;flex-shrink:0;}
+.price-btn{display:block;text-align:center;padding:11px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;font-family:'DM Sans',sans-serif;border:1px solid var(--border2);color:var(--text);background:var(--bg3);transition:all .15s;}
+.price-btn:hover{background:var(--bg2);}
+.price-card.featured .price-btn{background:var(--green);color:#fff;border-color:transparent;}
+.price-card.featured .price-btn:hover{opacity:.88;}
+.trial-note{font-size:12px;color:var(--text3);margin-top:18px;}
+
+/* CTA band */
+.cta-band{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:88px 24px;text-align:center;}
+
+/* Footer */
+footer{padding:36px 48px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.footer-logo{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--text2);}
+footer p{font-size:12px;color:var(--text3);}
+footer nav{display:flex;gap:0;}
+footer nav a{font-size:12px;color:var(--text3);text-decoration:none;margin-left:20px;}
+footer nav a:hover{color:var(--text2);}
+@media(max-width:600px){footer{padding:28px 20px;flex-direction:column;text-align:center;}footer nav{justify-content:center;}}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .65s,transform .65s;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal-delay{transition-delay:.12s;}
+.reveal-delay2{transition-delay:.22s;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Networth.fyi</a>
+  <div class="nav-links">
+    <a href="#privacy">Privacy-first</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="/index.html" class="nav-cta">Start free trial →</a>
+  </div>
+  <a href="/index.html" class="nav-cta" style="display:none" id="mobile-cta">Try free</a>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <span class="hero-eyebrow">No bank connections. Ever.</span>
+  <h1 class="hero-title">Your net worth,<br><em>finally clear.</em></h1>
+  <p class="hero-sub">Manual entry means accuracy. No OAuth tokens sitting on someone's server. No data deals. Just your numbers, tracked beautifully over time.</p>
+  <div class="hero-actions">
+    <a href="/index.html" class="btn-primary">Start your free 14-day trial</a>
+    <a href="#features" class="btn-ghost">See how it works ↓</a>
+  </div>
+  <p class="hero-note">No credit card required &nbsp;·&nbsp; $3/mo or $50 lifetime &nbsp;·&nbsp; Cancel anytime</p>
+
+  <div class="ticker">
+    <div class="ticker-item">
+      <div class="t-label">Net worth</div>
+      <div class="t-value">$847,200</div>
+      <div class="t-change up">+12.4% YTD</div>
+    </div>
+    <div class="ticker-item">
+      <div class="t-label">Liquid assets</div>
+      <div class="t-value">$124,500</div>
+      <div class="t-change up">+$8,200</div>
+    </div>
+    <div class="ticker-item">
+      <div class="t-label">Avg / month</div>
+      <div class="t-value">$4,280</div>
+      <div class="t-change up">+2.1% / mo</div>
+    </div>
+    <div class="ticker-item">
+      <div class="t-label">Retirement</div>
+      <div class="t-value">$312,000</div>
+      <div class="t-change up">On track</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- Privacy -->
+<section id="privacy" class="section">
+  <div class="reveal">
+    <p class="section-label">Built different</p>
+    <h2 class="section-title">Manual by design.<br>Private by default.</h2>
+    <p class="section-sub">Every "automatic" finance app connects to your bank by storing credentials or tokens on their servers — then sells aggregated data or gets acquired. We don't.</p>
+  </div>
+  <div class="grid-2 reveal reveal-delay">
+    <div class="card">
+      <div class="card-icon">🔒</div>
+      <h3>No bank connections</h3>
+      <p>We never ask for your banking credentials. No Plaid. No OAuth tokens sitting on a server. Nothing to breach. Your account numbers stay with your bank.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>Works for everything</h3>
+      <p>Brokerage, real estate, crypto, HSA, home equity, business accounts — if it has a dollar value, you can track it. Plaid doesn't support half of these.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎯</div>
+      <h3>Intentional tracking</h3>
+      <p>The 15 minutes you spend entering your numbers every two weeks is the most valuable financial habit you can build. Manual entry forces you to actually look.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💾</div>
+      <h3>Your data, your rules</h3>
+      <p>We make money from subscriptions, not your data. No ads. No selling to wealth management firms. No pivot to selling your financial profile to the highest bidder.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- App mockup section -->
+<section id="preview" class="section">
+  <div class="reveal">
+    <p class="section-label">See it in action</p>
+    <h2 class="section-title">Built for people who<br>take money seriously.</h2>
+    <p class="section-sub">A clean, fast dashboard that shows exactly where you stand — and where you're going.</p>
+  </div>
+
+  <!-- Dashboard mockup -->
+  <div class="reveal reveal-delay" style="margin-top:48px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+    <!-- Mock sidebar -->
+    <div style="display:flex;min-height:480px;">
+      <div style="width:180px;background:#111113;border-right:1px solid var(--border);padding:20px 12px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--text);padding:0 8px 16px;border-bottom:1px solid var(--border);margin-bottom:8px;">Networth.fyi</div>
+        <div style="padding:8px 12px;border-radius:8px;background:var(--bg3);font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px;"><span>◎</span> Dashboard</div>
+        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span>＋</span> Entry</div>
+        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span>≡</span> History</div>
+        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span>⊞</span> Accounts</div>
+        <div style="margin-top:auto;padding:8px 12px;border-radius:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span>⚙</span> Settings</div>
+      </div>
+      <!-- Mock content -->
+      <div style="flex:1;padding:24px;overflow:hidden;">
+        <!-- Cards + category row -->
+        <div style="display:grid;grid-template-columns:160px 1fr;gap:14px;margin-bottom:20px;">
+          <!-- Cards -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;">Net worth</div>
+              <div style="font-size:18px;font-family:var(--mono);font-weight:500;color:var(--text);">$1,284,390</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;">Since last entry</div>
+              <div style="font-size:16px;font-family:var(--mono);font-weight:500;color:var(--green);">+$42,180</div>
+              <div style="font-size:10px;color:var(--green);">+3.4%</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;">Liquid assets</div>
+              <div style="font-size:16px;font-family:var(--mono);font-weight:500;color:var(--green);">$186,420</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;">Avg/month (3mo)</div>
+              <div style="font-size:16px;font-family:var(--mono);font-weight:500;color:var(--green);">+$8,240</div>
+              <div style="font-size:10px;color:var(--green);">+0.7% / mo</div>
+            </div>
+          </div>
+          <!-- Category table -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:10px 12px;border-bottom:1px solid var(--border);">By category</div>
+            ${[
+              ['Real Estate','$487,200','+$44,100','(+10%)','var(--green)'],
+              ['Retirement','$312,840','+$28,340','(+10%)','var(--green)'],
+              ['Business','$224,500','+$18,200','(+8.8%)','var(--green)'],
+              ['Brokerage','$148,200','+$6,820','(+4.8%)','var(--green)'],
+              ['Savings','$72,400','-$2,100','(-2.8%)','#f09595'],
+              ['HSA','$38,250','+$1,240','(+3.3%)','var(--green)'],
+            ].map(([cat,val,chg,pct,col],i)=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;${i>0?'border-top:1px solid var(--border)':''}">
+              <span style="font-size:11px;color:var(--text2);">${cat} <span style="color:var(--text3);font-size:10px;">›</span></span>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span style="font-size:10px;font-family:var(--mono);color:${col};">${chg} ${pct}</span>
+                <span style="font-size:11px;font-family:var(--mono);color:var(--text);">${val}</span>
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Mini net worth chart (SVG) -->
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:10px;">Net worth over time</div>
+          <svg viewBox="0 0 520 90" style="width:100%;height:90px;" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1D9E75" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid lines -->
+            <line x1="0" y1="20" x2="520" y2="20" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="45" x2="520" y2="45" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="70" x2="520" y2="70" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <!-- Area fill -->
+            <path d="M0,82 L40,80 L80,78 L120,76 L160,73 L200,70 L240,65 L280,58 L310,52 L340,42 L370,32 L400,24 L430,18 L460,12 L520,8 L520,90 L0,90 Z" fill="url(#chartGrad)"/>
+            <!-- Line -->
+            <path d="M0,82 L40,80 L80,78 L120,76 L160,73 L200,70 L240,65 L280,58 L310,52 L340,42 L370,32 L400,24 L430,18 L460,12 L520,8" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Forecast dashed -->
+            <path d="M460,12 L490,7 L520,4" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.6"/>
+            <!-- Dots -->
+            <circle cx="340" cy="42" r="3" fill="#1D9E75"/>
+            <circle cx="460" cy="12" r="3" fill="#1D9E75"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category drilldown mockup -->
+  <div class="reveal reveal-delay2" style="margin-top:16px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+    <div style="display:flex;min-height:320px;">
+      <!-- Sidebar (collapsed) -->
+      <div style="width:180px;background:#111113;border-right:1px solid var(--border);padding:20px 12px;flex-shrink:0;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--text);padding:0 8px 16px;border-bottom:1px solid var(--border);margin-bottom:8px;">Networth.fyi</div>
+        <div style="padding:8px 12px;border-radius:8px;background:var(--bg3);font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px;"><span>◎</span> Dashboard</div>
+      </div>
+      <!-- Drilldown content -->
+      <div style="flex:1;padding:24px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+          <div style="font-size:11px;color:var(--text2);border:1px solid var(--border);padding:4px 10px;border-radius:6px;">← All categories</div>
+          <span style="font-size:16px;font-weight:500;">Retirement</span>
+          <span style="font-size:13px;font-family:var(--mono);color:var(--green);">+$130,448 (+47.2%)</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <!-- Mini chart -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:8px;">Retirement over time</div>
+            <svg viewBox="0 0 240 70" style="width:100%;height:70px;" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#378ADD" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#378ADD" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="20" x2="240" y2="20" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+              <line x1="0" y1="45" x2="240" y2="45" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+              <path d="M0,65 L40,60 L80,55 L120,48 L160,40 L200,28 L240,10 L240,70 L0,70 Z" fill="url(#blueGrad)"/>
+              <path d="M0,65 L40,60 L80,55 L120,48 L160,40 L200,28 L240,10" fill="none" stroke="#378ADD" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <!-- Accounts table -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+            <div style="display:grid;grid-template-columns:1fr 70px 70px 60px;background:rgba(255,255,255,0.03);padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);border-bottom:1px solid var(--border);">
+              <span>Account</span><span style="text-align:right">Current</span><span style="text-align:right">Change</span><span style="text-align:right">Chg%</span>
+            </div>
+            ${[
+              ['Roth IRA','$52,840','+$12,200','+30%'],
+              ['401(k)','$164,325','+$86,710','+112%'],
+              ['Spouse Roth','$46,357','—','—'],
+              ['Old 401(k)','$21,211','+$19,465','+1100%'],
+              ['HSA Invest','$28,107','+$12,073','+75%'],
+            ].map(([name,val,chg,pct],i)=>`
+            <div style="display:grid;grid-template-columns:1fr 70px 70px 60px;padding:7px 10px;align-items:center;${i>0?'border-top:1px solid var(--border)':''}">
+              <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+              <span style="font-size:11px;font-family:var(--mono);text-align:right;color:var(--text);">${val}</span>
+              <span style="font-size:11px;font-family:var(--mono);text-align:right;color:${chg==='—'?'var(--text3)':'var(--green)'};">${chg}</span>
+              <span style="font-size:11px;font-family:var(--mono);text-align:right;color:${pct==='—'?'var(--text3)':'var(--green)'};">${pct}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="features" class="section">
+  <div class="reveal">
+    <p class="section-label">Everything you need</p>
+    <h2 class="section-title">Powerful insights<br>from simple numbers.</h2>
+  </div>
+  <div class="features-grid reveal reveal-delay">
+    <div class="feature">
+      <div class="feature-num">01</div>
+      <h3>Net worth over time</h3>
+      <p>Line chart with customizable date filters, forecast projection, and age marks so you can see where you'll be at 50, 60, 65.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">02</div>
+      <h3>Category breakdown</h3>
+      <p>Allocation across Brokerage, Real Estate, Retirement, and more. Drill into any category for account-level detail.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">03</div>
+      <h3>Month-over-month</h3>
+      <p>Bar chart showing monthly change in dollars or percent. See your best and worst months at a glance.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">04</div>
+      <h3>Forecast engine</h3>
+      <p>Linear regression on your trailing history projects your net worth years into the future. Set a goal and track to it.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">05</div>
+      <h3>Full edit history</h3>
+      <p>Every entry saved forever. Edit past entries, track archived accounts that still count toward totals.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-num">06</div>
+      <h3>Works everywhere</h3>
+      <p>Cloud-synced. Log in from any browser, any device. Your data follows you without sharing it with anyone.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- Pricing -->
+<section id="pricing" class="section">
+  <div class="reveal">
+    <p class="section-label">Simple pricing</p>
+    <h2 class="section-title">Pay once or monthly.<br>No surprises.</h2>
+    <p class="section-sub">Start with a free 14-day trial. No credit card required. Your data is always yours.</p>
+  </div>
+  <div class="pricing-wrap reveal reveal-delay">
+    <div class="price-card">
+      <p class="price-name">Monthly</p>
+      <div class="price-amount"><sup>$</sup>3</div>
+      <p class="price-period">per month</p>
+      <ul class="price-list">
+        <li>Unlimited accounts</li>
+        <li>All charts &amp; forecasts</li>
+        <li>Cloud sync</li>
+        <li>Cancel anytime</li>
+      </ul>
+      <a href="https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e" class="price-btn">Start free trial</a>
+    </div>
+    <div class="price-card featured">
+      <span class="price-badge">Best value</span>
+      <p class="price-name">Lifetime</p>
+      <div class="price-amount"><sup>$</sup>50</div>
+      <p class="price-period">one-time payment</p>
+      <ul class="price-list">
+        <li>Everything in Monthly</li>
+        <li>Pay once, use forever</li>
+        <li>All future updates</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" class="price-btn">Get lifetime access</a>
+    </div>
+  </div>
+  <p class="trial-note reveal">14-day free trial on both plans &nbsp;·&nbsp; No credit card required</p>
+</section>
+
+<!-- CTA band -->
+<div class="cta-band">
+  <h2 class="section-title reveal" style="max-width:520px;margin:0 auto 14px;">Start tracking today.</h2>
+  <p class="section-sub reveal" style="margin:0 auto 32px;max-width:440px;">Join people who'd rather spend 15 minutes a month knowing exactly where they stand than hand their bank credentials to a startup.</p>
+  <a href="/index.html" class="btn-primary reveal">Start your free trial →</a>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div>
+    <div class="footer-logo">Networth.fyi</div>
+    <p style="margin-top:5px;">© 2026 Networth.fyi. All rights reserved.</p>
+  </div>
+  <nav>
+    <a href="/index.html">App</a>
+    <a href="mailto:hello@networth.fyi">Contact</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+  </nav>
+</footer>
+
+<script>
+// Mobile nav CTA
+if(window.innerWidth<=600){
+  document.getElementById('mobile-cta').style.display='inline-block';
+}
+
+// Scroll reveal
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}
+  });
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>
