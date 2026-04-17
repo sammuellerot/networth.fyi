@@ -221,28 +221,11 @@ footer nav a:hover{color:var(--text2);}
 
   <div class="reveal reveal-delay" style="margin-top:44px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#111113;">
     <!-- Demo shell -->
-    <div style="display:flex;min-height:600px;" id="demo-shell">
-      <!-- Sidebar -->
-      <nav style="width:190px;background:#0e0e10;border-right:1px solid rgba(255,255,255,0.07);padding:20px 12px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:#f0ede8;padding:0 8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:8px;">Networth.fyi</div>
-        <div style="padding:8px 12px;border-radius:8px;background:#1a1a1d;font-size:12px;color:#f0ede8;display:flex;align-items:center;gap:8px;"><span>◎</span> Dashboard</div>
-        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:#8a8580;display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:.5;"><span>＋</span> Entry</div>
-        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:#8a8580;display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:.5;"><span>≡</span> History</div>
-        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:#8a8580;display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:.5;"><span>⊞</span> Accounts</div>
-        <div style="margin-top:auto;padding:8px 12px;border-radius:8px;font-size:12px;color:#8a8580;display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:.5;"><span>⚙</span> Settings</div>
-        <div style="padding:8px 4px;margin-top:4px;border-top:1px solid rgba(255,255,255,0.07);">
-          <div style="font-size:10px;color:#5a5550;padding:0 8px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">demo@networth.fyi</div>
-        </div>
-      </nav>
-
-      <!-- Main pane -->
-      <div style="flex:1;padding:24px 28px;overflow-y:auto;min-width:0;" id="demo-main">
-        <!-- populated by JS -->
-      </div>
+    <div id="demo-shell" style="padding:20px 24px;">
+      <div id="demo-main"><!-- populated by JS --></div>
     </div>
-    <div style="padding:10px 16px;border-top:1px solid rgba(255,255,255,0.05);background:#0e0e10;text-align:center;">
-      <span style="font-size:11px;color:#5a5550;">Interactive demo — read only &nbsp;·&nbsp; </span>
-      <a href="/index.html" style="font-size:11px;color:#1D9E75;text-decoration:none;">Start your free trial →</a>
+    <div style="padding:8px 16px;border-top:1px solid rgba(255,255,255,0.05);background:#0e0e10;text-align:center;">
+      <span style="font-size:11px;color:#5a5550;">Interactive demo — read only</span>
     </div>
   </div>
 </section>
@@ -250,7 +233,6 @@ footer nav a:hover{color:var(--text2);}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function(){
-// ── Demo data ─────────────────────────────────────────────────────────
 const MONTHS = [
   '2021-01','2021-02','2021-03','2021-04','2021-05','2021-06',
   '2021-07','2021-08','2021-09','2021-10','2021-11','2021-12',
@@ -354,31 +336,30 @@ function renderDemo(){
   }
 
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:170px 1fr;gap:14px;margin-bottom:20px;">
-      <!-- Cards -->
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        ${card('Net worth', fmt(last))}
-        ${card('Since last entry', fmtD(diff), (diff>=0?'#1D9E75':'#f09595'), `${diff>=0?'+':''}${pct}%`)}
-        ${card('Liquid assets', fmt(154800), '#1D9E75')}
-        ${card('Avg / month (3mo)', fmtD(28400), '#1D9E75', '+2.8% / mo')}
-      </div>
-      <!-- Category table -->
-      <div style="background:#1a1a1d;border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;">
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.07);">By category</div>
-        ${CATS.map((c,i)=>{
-          const val=c.accounts.reduce((s,a)=>s+a.val,0);
-          const firstVal=c.accounts.reduce((s,a)=>s+(a.first||0),0);
-          const cd=val-firstVal;
-          const cp=(firstVal?(cd/firstVal*100):0).toFixed(1);
-          return `<div onclick="demoDrillCat('${c.name}')" style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;cursor:pointer;transition:background .12s;${i>0?'border-top:1px solid rgba(255,255,255,0.05)':''}" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-            <span style="font-size:12px;color:#d0cdc8;">${c.name} <span style="font-size:10px;color:#5a5550;">›</span></span>
-            <div style="display:flex;gap:10px;align-items:center;">
-              <span style="font-size:11px;font-family:${mono};color:${cd>=0?'#1D9E75':'#f09595'};">${cd>=0?'+':''}${fmt(Math.abs(cd)).replace('$',cd<0?'-$':'$')} (${cd>=0?'+':''}${cp}%)</span>
-              <span style="font-size:12px;font-family:${mono};color:#f0ede8;">${fmt(val)}</span>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
+    <!-- 4 stat cards -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;">
+      ${card('Net worth', fmt(last))}
+      ${card('Since last entry', fmtD(diff), (diff>=0?'#1D9E75':'#f09595'), `${diff>=0?'+':''}${pct}%`)}
+      ${card('Liquid assets', fmt(154800), '#1D9E75')}
+      ${card('Avg / month (3mo)', fmtD(28400), '#1D9E75', '+2.8% / mo')}
+    </div>
+
+    <!-- Category table -->
+    <div style="background:#1a1a1d;border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;margin-bottom:12px;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.07);">By category</div>
+      ${CATS.map((c,i)=>{
+        const val=c.accounts.reduce((s,a)=>s+a.val,0);
+        const firstVal=c.accounts.reduce((s,a)=>s+(a.first||0),0);
+        const cd=val-firstVal;
+        const cp=(firstVal?(cd/firstVal*100):0).toFixed(1);
+        return `<div onclick="demoDrillCat('${c.name}')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;transition:background .12s;${i>0?'border-top:1px solid rgba(255,255,255,0.05)':''}" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:12px;color:#d0cdc8;">${c.name} <span style="font-size:10px;color:#5a5550;">›</span></span>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span style="font-size:11px;font-family:${mono};color:${cd>=0?'#1D9E75':'#f09595'};">${cd>=0?'+':''}${fmt(Math.abs(cd)).replace('$',cd<0?'-$':'$')} (${cd>=0?'+':''}${cp}%)</span>
+            <span style="font-size:12px;font-family:${mono};color:#f0ede8;">${fmt(val)}</span>
+          </div>
+        </div>`;
+      }).join('')}
     </div>
 
     <!-- Line chart -->
