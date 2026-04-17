@@ -1992,6 +1992,7 @@ document.addEventListener('visibilitychange',async()=>{
 let _recoverySession = null;
 
 sb.auth.onAuthStateChange(async(event, session) => {
+  console.log('[AUTH EVENT]', event, session?.user?.email);
   if(event === 'PASSWORD_RECOVERY'){
     _recoverySession = session;
     showResetPassword();
