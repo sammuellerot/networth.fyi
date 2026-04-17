@@ -1988,34 +1988,17 @@ document.addEventListener('visibilitychange',async()=>{
   }
 });
 
+// Listen for password recovery event from Supabase
+sb.auth.onAuthStateChange((event, session) => {
+  if(event === 'PASSWORD_RECOVERY'){
+    showResetPassword();
+  } else if(event === 'SIGNED_IN' && !currentUser){
+    // Normal sign in handled by getSession below
+  }
+});
+
 // Single boot on page load
 (async()=>{
-  const hash = window.location.hash;
-  const params = new URLSearchParams(hash.replace('#','?'));
-
-  // Handle password recovery token in URL
-  if(params.get('type')==='recovery' && params.get('access_token')){
-    try{
-      // Use verifyOtp to exchange the token for a valid session
-      const {error} = await sb.auth.verifyOtp({
-        token_hash: params.get('access_token'),
-        type: 'recovery'
-      });
-      if(error) throw error;
-      showResetPassword();
-    } catch(e){
-      console.error('Recovery token error:',e);
-      // Try getting existing session — Supabase may have already set it
-      const {data:{session}} = await sb.auth.getSession();
-      if(session){
-        showResetPassword();
-      } else {
-        showResetPassword(); // Show form, error will appear on submit
-      }
-    }
-    return;
-  }
-
   const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
     await bootUser(session.user);
