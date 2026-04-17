@@ -324,12 +324,13 @@ function initFV(){
 }
 
 function switchTab(t){
-  if(window._paywallActive) return; // locked
+  if(window._paywallActive) return;
   const TABS=['dashboard','enter','history','manage','settings'];
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',TABS[i]===t));
   TABS.forEach(name=>$('pane-'+name).style.display=name===t?'block':'none');
   if(t==='enter'&&currentTab!=='enter')fv={};
   currentTab=t;
+  sessionStorage.setItem('nw_tab',t);
   if(t==='dashboard')renderDash();
   else if(t==='enter')renderEnter();
   else if(t==='history')renderHist();
@@ -1901,7 +1902,12 @@ async function bootUser(user){
 
   if(window._accessGranted){
     hidePaywall();
-    renderDash();
+    const savedTab=sessionStorage.getItem('nw_tab');
+    if(savedTab&&savedTab!=='dashboard'){
+      switchTab(savedTab);
+    } else {
+      renderDash();
+    }
   }
 }
 
