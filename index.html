@@ -1624,7 +1624,7 @@ function setSyncBar(msg,color='var(--text2)'){
 
 async function loadFromSupabase(){
   if(!currentUser) return;
-  setSyncBar('Loading...');
+  setSyncBar('');
   try{
     // Load accounts
     const {data:accts,error:ae}=await sb.from('accounts').select('*').eq('user_id',currentUser.id).order('sort_order');
