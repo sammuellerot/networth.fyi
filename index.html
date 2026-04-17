@@ -1500,11 +1500,16 @@ function showPaywall(daysLeft){
   if(monthly) monthly.href=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
   if(lifetime) lifetime.href=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
   overlay.style.display='flex';
+  // Hard block — hide app and disable pointer events on anything behind
   $('app').style.display='none';
+  $('app').style.pointerEvents='none';
+  document.body.style.overflow='hidden';
 }
 
 function hidePaywall(){
   $('paywall-overlay').style.display='none';
+  $('app').style.pointerEvents='';
+  document.body.style.overflow='';
 }
 
 function showApp(user){
@@ -1594,6 +1599,8 @@ async function loadFromSupabase(){
       setSyncBar('');
       return;
     }
+    // Access granted — show the app now
+    $('app').style.display='block';
     // Show trial countdown in topbar
     if(access.status==='trialing'&&access.daysLeft!==null){
       const bar=$('sync-bar');
@@ -1769,13 +1776,24 @@ async function saveEditedEntry(){
 /* ─────────────────────────────────────────
    Boot
 ───────────────────────────────────────── */
+async function bootUser(user){
+  currentUser=user;
+  $('auth-overlay').style.display='none';
+  $('user-email').textContent=user.email;
+  // Don't show app yet — wait for access check
+  await loadFromSupabase();
+  loadSettings();
+  // loadFromSupabase either calls showPaywall or lets through
+  // Only render if app is visible (access granted)
+  if($('app').style.display!=='none'){
+    renderDash();
+  }
+}
+
 // Listen for auth state changes
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(session&&session.user){
-    showApp(session.user);
-    await loadFromSupabase();
-    loadSettings();
-    renderDash();
+    await bootUser(session.user);
   } else {
     showAuth();
   }
@@ -1785,10 +1803,7 @@ sb.auth.onAuthStateChange(async(event,session)=>{
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
-    showApp(session.user);
-    await loadFromSupabase();
-    loadSettings();
-    renderDash();
+    await bootUser(session.user);
   }
   // If no session, auth overlay is already visible
 })();
