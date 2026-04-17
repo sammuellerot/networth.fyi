@@ -280,6 +280,7 @@ function initFV(){
 }
 
 function switchTab(t){
+  if(window._paywallActive) return; // locked
   const TABS=['dashboard','enter','history','manage','settings'];
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',TABS[i]===t));
   TABS.forEach(name=>$('pane-'+name).style.display=name===t?'block':'none');
@@ -1483,15 +1484,23 @@ function paywallHTML(){
 }
 
 function showPaywall(){
-  // Disable all tabs except dashboard
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    if(i>0){t.style.opacity='0.3';t.style.pointerEvents='none';}
+  $('app').style.display='block';
+  // Disable ALL tabs — no navigation allowed
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.style.opacity='0.3';
+    t.style.pointerEvents='none';
+    t.style.cursor='default';
   });
-  // Render paywall inside dashboard pane
+  // Force dashboard pane visible with paywall content
+  const TABS=['dashboard','enter','history','manage','settings'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',TABS[i]==='dashboard'));
+  TABS.forEach(name=>{
+    const pane=$('pane-'+name);
+    if(pane) pane.style.display=name==='dashboard'?'block':'none';
+  });
   const dash=$('pane-dashboard');
   if(dash) dash.innerHTML=paywallHTML();
-  // Make sure dashboard tab is active
-  switchTabUI('dashboard');
+  window._paywallActive=true;
 }
 
 function switchTabUI(t){
@@ -1798,7 +1807,24 @@ sb.auth.onAuthStateChange(async(event,session)=>{
   }
 });
 
-// Check for existing session on page load
+// Re-check access when user returns to the tab (e.g. after visiting checkout)
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='visible'&&currentUser&&!window._paywallActive){
+    // Re-fetch subscription status silently
+    const {data:s}=await sb.from('user_settings').select('subscription_status,trial_start').eq('user_id',currentUser.id).maybeSingle();
+    if(s){
+      const access=checkAccess(s);
+      if(!access.allowed){
+        window._paywallActive=false; // reset so showPaywall can re-apply
+        showPaywall();
+      } else if(access.status==='active'&&window._paywallActive){
+        // They just paid — let them in
+        window._paywallActive=false;
+        location.reload();
+      }
+    }
+  }
+});
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
