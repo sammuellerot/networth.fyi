@@ -1699,9 +1699,6 @@ async function loadFromSupabase(){
     window._paywallActive=false;
     window._accessGranted=true;
     $('app').style.display='block';
-    // Access granted
-    window._accessGranted=true;
-    $('app').style.display='block';
     hidePaywall();
     // Show trial countdown in topbar
     if(access.status==='trialing'&&access.daysLeft!==null){
@@ -1714,9 +1711,14 @@ async function loadFromSupabase(){
     setSyncBar('');
   } catch(e){
     console.error('Load error:',e);
-    // On any error, show paywall to be safe — don't let users in on failed checks
-    showPaywall();
-    setSyncBar('');
+    // Show app anyway with empty data — don't block on errors
+    accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+    entries=[];
+    sessionStorage.removeItem('nw_paywall');
+    window._accessGranted=true;
+    $('app').style.display='block';
+    setSyncBar('Could not load data — check connection','var(--red)');
+    setTimeout(()=>setSyncBar(''),4000);
   }
 }
 
