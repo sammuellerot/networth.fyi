@@ -1542,18 +1542,34 @@ async function signOut(){
 function showAuth(){
   $('auth-overlay').style.display='flex';
   $('app').style.display='none';
-  // Clear credentials for security
-  const email=$('auth-email'), pw=$('auth-password');
-  if(email) email.value='';
-  if(pw) pw.value='';
-  // Reset button
+  // Restore original auth box in case it was replaced by reset form
+  const box=document.querySelector('.auth-box');
+  if(box && !$('auth-email')){
+    box.innerHTML=`
+      <div class="auth-logo">Networth.fyi</div>
+      <div class="auth-sub">Your net worth. Your data. Private by default.</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="setAuthTab('login')">Sign in</button>
+        <button class="auth-tab" onclick="setAuthTab('signup')">Create account</button>
+      </div>
+      <div class="auth-field"><label>Email</label><input type="email" id="auth-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
+      <div class="auth-field"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
+      <div class="auth-err" id="auth-err"></div>
+      <div class="auth-ok" id="auth-ok"></div>
+      <button class="primary" style="width:100%;padding:10px;font-size:14px" onclick="submitAuth()" id="auth-btn">Sign in</button>
+      <p style="font-size:11px;color:var(--text2);margin-top:14px;text-align:center">
+        <span id="auth-forgot-wrap"><a href="#" onclick="forgotPassword();return false" style="color:var(--text2)">Forgot password?</a></span>
+      </p>
+      <p style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center">Your username is your email address</p>
+    `;
+  }
+  // Clear credentials
+  const email=$('auth-email'),pw=$('auth-password');
+  if(email)email.value='';if(pw)pw.value='';
   const btn=$('auth-btn');
   if(btn){btn.textContent='Sign in';btn.disabled=false;}
-  // Clear messages
   const err=$('auth-err'),ok=$('auth-ok');
-  if(err) err.textContent='';
-  if(ok) ok.textContent='';
-  // Reset to sign in tab
+  if(err)err.textContent='';if(ok)ok.textContent='';
   setAuthTab('login');
 }
 
