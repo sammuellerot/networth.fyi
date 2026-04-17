@@ -1907,6 +1907,8 @@ async function loadFromSupabase(){
   if(!currentUser) return;
   console.log('[LOAD START] user:', currentUser.email);
   setSyncBar('');
+  // Small delay to let Supabase session fully establish
+  await new Promise(r=>setTimeout(r,300));
   try{
     // Load accounts
     console.log('[LOAD] 1 querying accounts...');
