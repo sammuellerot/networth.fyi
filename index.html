@@ -2213,6 +2213,7 @@ document.addEventListener('visibilitychange',async()=>{
 let _recoverySession = null;
 
 sb.auth.onAuthStateChange(async(event, session) => {
+  console.log('[AUTH]', event, 'user:', session?.user?.email, 'currentUser:', currentUser?.email, 'explicit:', window._explicitSignOut);
   if(event === 'PASSWORD_RECOVERY'){
     _recoverySession = session;
     showResetPassword();
