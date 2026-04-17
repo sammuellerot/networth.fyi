@@ -225,7 +225,7 @@ let dashFilter='all', dashFromDate='', dashToDate='', selectedCat=null;
 let editingEntryIdx=null;
 let showActual=true, showForecast=true, momMode='$'; // chart toggles
 
-const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,currentAge:'',goalAmount:''};
+const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,birthday:'',goalAmount:''};
 let settings={...DEFAULT_SETTINGS};
 
 function loadSettings(){
@@ -635,7 +635,7 @@ function renderDashCharts(){
           y:{ticks:{callback:yFmt,font:{size:11},color:tickColor},grid:{color:gridColor}},
           x:{ticks:{font:{size:11},maxRotation:0,color:tickColor,autoSkip:true,maxTicksLimit:10,callback:(val,idx)=>{
             const label=allLabels[idx]||'';
-            if(!settings.currentAge) return label;
+            if(!settings.birthday) return label;
             const age=dateToAge(label);
             return age!==null?[label,`age ${age}`]:label;
           }},grid:{display:false}}
@@ -1228,11 +1228,12 @@ function dateToDay(dateStr){
 }
 
 function dateToAge(dateStr){
-  if(!settings.currentAge) return null;
-  const today=new Date();
+  if(!settings.birthday) return null;
+  const bday=new Date(settings.birthday);
   const date=new Date(dateStr);
-  const yearsDiff=(date.getTime()-today.getTime())/(1000*60*60*24*365.25);
-  const age=Math.round(Number(settings.currentAge)+yearsDiff);
+  let age=date.getFullYear()-bday.getFullYear();
+  const m=date.getMonth()-bday.getMonth();
+  if(m<0||(m===0&&date.getDate()<bday.getDate())) age--;
   return age>0?age:null;
 }
 
@@ -1334,12 +1335,12 @@ function renderSettings(){
 
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)">
       <div>
-        <p style="font-size:13px;font-weight:500">Current age</p>
-        <p style="font-size:12px;color:var(--text2);margin-top:2px">Used for future insights</p>
+        <p style="font-size:13px;font-weight:500">Birthday</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:2px">Used to show your age on the net worth chart</p>
       </div>
-      <input type="number" id="s-age" value="${settings.currentAge||''}" min="1" max="120" placeholder="—"
-        style="width:70px;text-align:center;font-size:14px"
-        oninput="saveSetting('currentAge',parseInt(this.value)||'')"/>
+      <input type="date" id="s-birthday" value="${settings.birthday||''}"
+        style="font-size:13px;padding:4px 8px"
+        onchange="saveSetting('birthday',this.value)"/>
     </div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg)">
@@ -1626,7 +1627,7 @@ async function loadFromSupabase(){
     settings={
       forecastYears:s?.forecast_years||3,
       lookbackMonths:s?.lookback_months||12,
-      currentAge:s?.current_age||'',
+      birthday:s?.birthday||'',
       goalAmount:s?.goal_amount||''
     };
 
@@ -1724,7 +1725,7 @@ async function saveSettingsToSupabase(){
       user_id:currentUser.id,
       forecast_years:settings.forecastYears,
       lookback_months:settings.lookbackMonths,
-      current_age:settings.currentAge||null,
+      birthday:settings.birthday||null,
       goal_amount:settings.goalAmount||null,
       updated_at:new Date().toISOString()
     },{onConflict:'user_id'});
