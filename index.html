@@ -318,7 +318,6 @@ function loadSettings(){
   try{const s=localStorage.getItem('nw_settings');if(s)settings={...DEFAULT_SETTINGS,...JSON.parse(s)};}
   catch(e){settings={...DEFAULT_SETTINGS};}
 }
-function persistSettings(){try{localStorage.setItem('nw_settings',JSON.stringify(settings));}catch(e){}}
 
 const $=id=>document.getElementById(id);
 const fmt=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0);
@@ -357,8 +356,6 @@ function load(){
     }
   }catch(e){accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));}
 }
-function persist(){try{localStorage.setItem('nw_entries',JSON.stringify(entries));}catch(e){}}
-function persistAccounts(){try{localStorage.setItem('nw_accounts',JSON.stringify(accounts));}catch(e){}}
 function initFV(){
   const last=entries.length?entries[entries.length-1]:null;
   fv={};
