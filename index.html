@@ -1997,16 +1997,11 @@ sb.auth.onAuthStateChange((event, session) => {
 
 // Single boot on page load
 (async()=>{
-  // Check hash directly as a fallback
+  // Check hash directly — show reset form immediately if recovery token present
   const hash = window.location.hash;
   if(hash.includes('type=recovery')){
-    // Wait briefly for Supabase to process the hash and establish session
-    await new Promise(r=>setTimeout(r,500));
-    const {data:{session}}=await sb.auth.getSession();
-    if(session){
-      showResetPassword();
-      return;
-    }
+    showResetPassword();
+    return;
   }
 
   const {data:{session}}=await sb.auth.getSession();
@@ -2042,6 +2037,14 @@ async function submitReset(){
   if(pw.length<6){if(err)err.textContent='Password must be at least 6 characters.';return;}
   if(pw!==pw2){if(err)err.textContent='Passwords do not match.';return;}
   try{
+    // Wait up to 3 seconds for Supabase to establish session from the hash token
+    let session=null;
+    for(let i=0;i<6;i++){
+      const {data}=await sb.auth.getSession();
+      if(data?.session){session=data.session;break;}
+      await new Promise(r=>setTimeout(r,500));
+    }
+    if(!session) throw new Error('Session not established. Please request a new reset link.');
     const {error}=await sb.auth.updateUser({password:pw});
     if(error) throw error;
     if(ok) ok.textContent='Password updated! Signing you in...';
