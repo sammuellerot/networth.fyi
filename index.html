@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Networth.fyi</title>
+<title>Networth.fyi — Track your net worth. Own your data.</title>
+<meta name="description" content="Manual net worth tracking with zero bank connections. No OAuth tokens. No data brokers. Track every account, visualize your progress, and forecast your future."/>
+<meta name="theme-color" content="#1D9E75"/>
+<meta property="og:title" content="Networth.fyi — Track your net worth. Own your data."/>
+<meta property="og:description" content="Manual net worth tracking with zero bank connections. Private by default."/>
+<meta property="og:url" content="https://networth.fyi"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Networth.fyi"/>
+<meta name="twitter:description" content="Track your net worth. Own your data. No bank connections."/>
 
 
 <style>
@@ -1403,16 +1412,66 @@ function renderSettings(){
     </div>
   </div>
 
-  <div id="settings-msg" style="margin-top:14px"></div>`;
+  <div id="settings-msg" style="margin-top:14px"></div>
+
+  <div style="margin-top:40px;padding-top:24px;border-top:1px solid var(--border);">
+    <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Delete account</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Permanently delete your account and all associated data. This cannot be undone.</p>
+    <button onclick="confirmDeleteAccount()" id="delete-account-btn" style="font-size:12px;padding:7px 16px;border-radius:7px;cursor:pointer;font-family:inherit;background:transparent;border:1px solid var(--red);color:var(--red);transition:all .15s;">Delete my account</button>
+    <div id="delete-account-msg" style="margin-top:10px;font-size:12px;"></div>
+  </div>`;
 }
 
 function saveSetting(key,val){
   settings[key]=val;
   persistSettings();
-  // re-render dashboard charts if visible so forecast updates live
   if(currentTab==='dashboard') renderDashCharts();
   const el=$('settings-msg');
   if(el){el.innerHTML=`<div class="msg ok">Saved.</div>`;setTimeout(()=>{if($('settings-msg'))$('settings-msg').innerHTML='';},2000);}
+}
+
+let _deleteConfirm=false;
+function confirmDeleteAccount(){
+  const btn=$('delete-account-btn');
+  const msg=$('delete-account-msg');
+  if(!_deleteConfirm){
+    _deleteConfirm=true;
+    if(btn){btn.textContent='Confirm — permanently delete everything';btn.style.background='var(--red)';btn.style.color='#fff';}
+    if(msg){msg.style.color='var(--text2)';msg.textContent='Click again to confirm. This will delete all your entries, accounts, and settings.';}
+    setTimeout(()=>{
+      _deleteConfirm=false;
+      if(btn){btn.textContent='Delete my account';btn.style.background='transparent';btn.style.color='var(--red)';}
+      if(msg) msg.textContent='';
+    },5000);
+    return;
+  }
+  deleteAccount();
+}
+
+async function deleteAccount(){
+  const btn=$('delete-account-btn');
+  const msg=$('delete-account-msg');
+  if(btn){btn.disabled=true;btn.textContent='Deleting...';}
+  try{
+    // Delete all user data from Supabase
+    await sb.from('entry_values').delete().in('entry_id',
+      (await sb.from('entries').select('id').eq('user_id',currentUser.id)).data?.map(e=>e.id)||[]
+    );
+    await sb.from('entries').delete().eq('user_id',currentUser.id);
+    await sb.from('accounts').delete().eq('user_id',currentUser.id);
+    await sb.from('user_settings').delete().eq('user_id',currentUser.id);
+    // Sign out and clear everything
+    await sb.auth.signOut();
+    sessionStorage.clear();
+    localStorage.clear();
+    currentUser=null;
+    entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
+    showAuth();
+  } catch(e){
+    console.error('Delete account error:',e);
+    if(msg){msg.style.color='var(--red)';msg.textContent='Error deleting account. Please contact hello@networth.fyi';}
+    if(btn){btn.disabled=false;btn.textContent='Delete my account';}
+  }
 }
 
 /* ─────────────────────────────────────────
