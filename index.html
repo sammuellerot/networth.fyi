@@ -20,7 +20,9 @@
   *{box-sizing:border-box;margin:0;padding:0;scrollbar-width:none;-ms-overflow-style:none;}
   *::-webkit-scrollbar{display:none;}
   /* ── Auth overlay ── */
-  #auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+  #auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+  #boot-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;}
+  .boot-logo{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--text);opacity:.6;}
   .auth-box{width:100%;max-width:380px;}
   .auth-logo{font-size:22px;font-weight:700;margin-bottom:6px;}
   .auth-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
@@ -219,6 +221,9 @@ function forgotPassword(){
   if(err) err.textContent='Loading, please wait...';
 }
 </script>
+
+<!-- Boot screen — shown while checking session -->
+<div id="boot-screen"><div class="boot-logo">Networth.fyi</div></div>
 
 <!-- Auth overlay — shown when logged out -->
 <div id="auth-overlay">
@@ -1905,36 +1910,27 @@ function setSyncBar(msg,color='var(--text2)'){
 
 async function loadFromSupabase(){
   if(!currentUser) return;
-  console.log('[LOAD START] user:', currentUser.email);
   setSyncBar('');
   try{
     // Load accounts
-    console.log('[LOAD] 1 querying accounts...');
-    const {data:accts,error:ae}=await sb.from('accounts').select('*').eq('user_id',currentUser.id).order('sort_order');
-    console.log('[LOAD] 1 done:', accts?.length, ae);
-    if(ae){console.error('accounts error:',ae);throw ae;}
+      const {data:accts,error:ae}=await sb.from('accounts').select('*').eq('user_id',currentUser.id).order('sort_order');
+      if(ae){console.error('accounts error:',ae);throw ae;}
 
     // Load entries
-    console.log('[LOAD] 2 querying entries...');
-    const {data:ents,error:ee}=await sb.from('entries').select('id,entry_date').eq('user_id',currentUser.id).order('entry_date');
-    console.log('[LOAD] 2 done:', ents?.length, ee);
-    if(ee){console.error('entries error:',ee);throw ee;}
+      const {data:ents,error:ee}=await sb.from('entries').select('id,entry_date').eq('user_id',currentUser.id).order('entry_date');
+      if(ee){console.error('entries error:',ee);throw ee;}
 
     let entryValues=[];
     if(ents&&ents.length>0){
       const entryIds=ents.map(e=>e.id);
-      console.log('[LOAD] 3 querying entry_values...');
-      const {data:vals,error:ve}=await sb.from('entry_values').select('*').in('entry_id',entryIds);
-      console.log('[LOAD] 3 done:', vals?.length, ve);
-      if(ve){console.error('values error:',ve);throw ve;}
+          const {data:vals,error:ve}=await sb.from('entry_values').select('*').in('entry_id',entryIds);
+          if(ve){console.error('values error:',ve);throw ve;}
       entryValues=vals||[];
     }
 
     // Load settings
-    console.log('[LOAD] 4 querying settings...');
-    const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
-    console.log('[LOAD] 4 done:', s?.subscription_status);
-    if(accts&&accts.length>0){
+      const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
+      if(accts&&accts.length>0){
       accounts=accts.map(a=>({name:a.name,cat:a.category,liquid:a.liquid,archived:a.archived,_id:a.id}));
     } else {
       // First time user — use defaults locally, save in background
@@ -2189,8 +2185,7 @@ async function bootUser(user){
 
   if(window._accessGranted){
     hidePaywall();
-    console.log('[BOOT] accounts at render time:', accounts.length, accounts.map(a=>a.name));
-    const savedTab=sessionStorage.getItem('nw_tab');
+      const savedTab=sessionStorage.getItem('nw_tab');
     if(savedTab&&savedTab!=='dashboard'){
       switchTab(savedTab);
     } else {
@@ -2219,7 +2214,6 @@ document.addEventListener('visibilitychange',async()=>{
 let _recoverySession = null;
 
 sb.auth.onAuthStateChange(async(event, session) => {
-  console.log('[AUTH]', event, 'user:', session?.user?.email, 'currentUser:', currentUser?.email, 'explicit:', window._explicitSignOut);
   if(event === 'PASSWORD_RECOVERY'){
     _recoverySession = session;
     showResetPassword();
@@ -2239,9 +2233,13 @@ sb.auth.onAuthStateChange(async(event, session) => {
 window.addEventListener('load', async()=>{
   await new Promise(r=>setTimeout(r,100));
   const {data:{session}}=await sb.auth.getSession();
-  console.log('[BOOT] getSession result:', session?.user?.email);
+  const bootScreen=$('boot-screen');
   if(session?.user){
+    if(bootScreen) bootScreen.style.display='none';
     await bootUser(session.user);
+  } else {
+    if(bootScreen) bootScreen.style.display='none';
+    showAuth();
   }
 });
 
