@@ -628,7 +628,7 @@ function renderObStep(){
 
     el.innerHTML=`
       <div class="ob-title">Enter your first values</div>
-      <div class="ob-sub">Enter today's balance for each account. Don't worry about being exact — you can update any time.<br><br><span style="color:var(--text3);font-size:12px;">💡 Have historical data? You can add past entries in the History tab after setup.</span></div>
+      <div class="ob-sub">Enter today's balance for each account. Don't worry about being exact — you can update any time.<br><br><span style="color:var(--text3);font-size:12px;">💡 Have historical data? Import past entries via <strong>Settings → Import history</strong> after setup.</span></div>
       <div style="max-height:280px;overflow-y:auto;padding-right:4px;">${rows}</div>
       <div class="ob-footer">
         <button class="ob-skip" onclick="hideOnboarding()">Skip for now</button>
@@ -1617,11 +1617,126 @@ function renderSettings(){
   <div id="settings-msg" style="margin-top:14px"></div>
 
   <div style="margin-top:40px;padding-top:24px;border-top:1px solid var(--border);">
+    <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Import history</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">Upload a CSV to import historical entries. Each row is one entry date across all your accounts.<br>
+    <span style="color:var(--text3);">Format: first column is <code style="font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px;">Date</code> (YYYY-MM-DD), then one column per account name matching exactly.</span></p>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button onclick="downloadImportTemplate()" style="font-size:12px;padding:7px 14px;border-radius:7px;cursor:pointer;font-family:inherit;background:transparent;border:1px solid var(--border2);color:var(--text2);">↓ Download template</button>
+      <label style="font-size:12px;padding:7px 14px;border-radius:7px;cursor:pointer;font-family:inherit;background:transparent;border:1px solid var(--border2);color:var(--text2);">
+        ↑ Upload CSV
+        <input type="file" accept=".csv" onchange="importCSV(this)" style="display:none"/>
+      </label>
+    </div>
+    <div id="import-msg" style="margin-top:10px;font-size:12px;"></div>
+  </div>
+
+  <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border);">
+    <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Export data</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">Download all your entries as a CSV file for backup or analysis.</p>
+    <button onclick="exportCSV()" style="font-size:12px;padding:7px 14px;border-radius:7px;cursor:pointer;font-family:inherit;background:transparent;border:1px solid var(--border2);color:var(--text2);">↓ Export all entries</button>
+  </div>
+
+  <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border);">
     <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Delete account</p>
     <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Permanently delete your account and all associated data. This cannot be undone.</p>
     <button onclick="confirmDeleteAccount()" id="delete-account-btn" style="font-size:12px;padding:7px 16px;border-radius:7px;cursor:pointer;font-family:inherit;background:transparent;border:1px solid var(--red);color:var(--red);transition:all .15s;">Delete my account</button>
     <div id="delete-account-msg" style="margin-top:10px;font-size:12px;"></div>
   </div>`;
+}
+
+/* ─────────────────────────────────────────
+   Import / Export
+───────────────────────────────────────── */
+function downloadImportTemplate(){
+  const accs=activeAccounts().map(a=>a.name);
+  const header=['Date',...accs].join(',');
+  const example=[new Date().toISOString().split('T')[0],...accs.map(()=>0)].join(',');
+  const csv=header+'\n'+example+'\n';
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='networth_import_template.csv';a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV(){
+  if(!entries.length){showMsg('<div class="msg warn">No entries to export.</div>',3000);return;}
+  const allAccs=[...new Set(entries.flatMap(e=>Object.keys(e.values)))].sort();
+  const header=['Date',...allAccs].join(',');
+  const rows=entries.map(e=>[e.date,...allAccs.map(a=>e.values[a]||0)].join(','));
+  const csv=header+'\n'+rows.join('\n')+'\n';
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='networth_export.csv';a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importCSV(input){
+  const msg=$('import-msg');
+  const file=input.files[0];
+  if(!file){return;}
+  if(msg) msg.innerHTML='<span style="color:var(--text2)">Reading file...</span>';
+  try{
+    const text=await file.text();
+    const lines=text.trim().split('\n').filter(l=>l.trim());
+    if(lines.length<2){throw new Error('File must have at least a header row and one data row.');}
+
+    // Parse header
+    const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+    if(headers[0].toLowerCase()!=='date'){throw new Error('First column must be "Date".');}
+    const accs=headers.slice(1);
+
+    // Validate accounts exist
+    const knownAccs=new Set(accounts.map(a=>a.name));
+    const missing=accs.filter(a=>!knownAccs.has(a));
+    if(missing.length>0){
+      // Auto-add missing accounts
+      missing.forEach(name=>{
+        if(!accounts.find(a=>a.name===name)){
+          accounts.push({name,cat:'Other',liquid:false,archived:false});
+        }
+      });
+      persistAccounts();
+    }
+
+    // Parse rows
+    let imported=0, skipped=0;
+    for(let i=1;i<lines.length;i++){
+      const cols=lines[i].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+      const date=cols[0];
+      if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)){skipped++;continue;}
+      const values={};
+      accs.forEach((name,j)=>{
+        const v=parseFloat(cols[j+1])||0;
+        if(v>0) values[name]=v;
+      });
+      if(!Object.keys(values).length){skipped++;continue;}
+      const existing=entries.findIndex(e=>e.date===date);
+      const entry={date,values};
+      if(existing>=0) entries[existing]=entry;
+      else entries.push(entry);
+      imported++;
+    }
+    entries.sort((a,b)=>a.date<b.date?-1:1);
+    persist();
+
+    // Save to Supabase
+    if(msg) msg.innerHTML='<span style="color:var(--text2)">Saving to cloud...</span>';
+    if(currentUser){
+      for(const e of entries){
+        await saveEntryToSupabase(e);
+      }
+    }
+
+    if(msg) msg.innerHTML=`<div class="msg ok">Imported ${imported} entries${skipped>0?` (${skipped} skipped)`:''}. Redirecting to dashboard...</div>`;
+    input.value='';
+    setTimeout(()=>switchTab('dashboard'),1500);
+  } catch(e){
+    console.error('Import error:',e);
+    if(msg) msg.innerHTML=`<div class="msg err">${e.message||'Import failed. Check your file format.'}</div>`;
+    input.value='';
+  }
 }
 
 function saveSetting(key,val){
