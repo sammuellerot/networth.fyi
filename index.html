@@ -1513,9 +1513,17 @@ function switchTabUI(t){
 }
 
 function hidePaywall(){
+  window._paywallActive=false;
+  sessionStorage.removeItem('nw_paywall');
+  // Restore all tabs
   document.querySelectorAll('.tab').forEach(t=>{
     t.style.opacity='';t.style.pointerEvents='';t.style.cursor='';
   });
+  // Clear paywall content from dashboard pane
+  const dash=$('pane-dashboard');
+  if(dash) dash.innerHTML='';
+  // Make sure app is visible
+  $('app').style.display='block';
 }
 
 async function verifyAndUnlock(){
