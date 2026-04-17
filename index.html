@@ -1905,6 +1905,7 @@ function setSyncBar(msg,color='var(--text2)'){
 
 async function loadFromSupabase(){
   if(!currentUser) return;
+  console.log('[LOAD START] user:', currentUser.email);
   setSyncBar('');
   try{
     // Load accounts
