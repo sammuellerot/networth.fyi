@@ -1884,6 +1884,10 @@ async function bootUser(user){
   window._accessGranted=false;
   window._paywallActive=false;
 
+  // Show app shell immediately with loading state — never black screen
+  $('app').style.display='block';
+  $('pane-dashboard').innerHTML=`<div style="padding:60px 0;text-align:center;color:var(--text2);font-size:13px;letter-spacing:.02em">Loading...</div>`;
+
   await loadFromSupabase();
   loadSettings();
 
