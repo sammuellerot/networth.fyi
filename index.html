@@ -163,6 +163,29 @@
   .add-form{background:var(--bg2);border-radius:var(--radius-sm);padding:14px;margin-top:4px;display:flex;flex-direction:column;gap:10px;}
   .add-row{display:flex;gap:8px;flex-wrap:wrap;}
   .add-row input,.add-row select{flex:1;min-width:120px;}
+  /* ── Onboarding overlay ── */
+  #onboarding-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+  .onboarding-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:520px;padding:32px;position:relative;}
+  .ob-step-indicator{display:flex;gap:6px;margin-bottom:24px;}
+  .ob-step-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background .2s;}
+  .ob-step-dot.active{background:#1D9E75;}
+  .ob-step-dot.done{background:#1D9E75;opacity:.4;}
+  .ob-title{font-size:20px;font-weight:600;margin-bottom:8px;letter-spacing:-.2px;}
+  .ob-sub{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:24px;}
+  .ob-dismiss{position:absolute;top:16px;right:16px;font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 8px;border-radius:4px;}
+  .ob-dismiss:hover{color:var(--text2);}
+  .ob-footer{display:flex;justify-content:space-between;align-items:center;margin-top:24px;}
+  .ob-skip{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:inherit;}
+  .ob-skip:hover{color:var(--text2);}
+  .ob-account-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .ob-account-row input[type=text]{flex:1;padding:7px 10px;font-size:13px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:inherit;outline:none;}
+  .ob-account-row input[type=text]:focus{border-color:#1D9E75;}
+  .ob-account-row select{padding:7px 8px;font-size:12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:inherit;outline:none;}
+  .ob-add-btn{font-size:12px;color:#1D9E75;background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0;margin-top:4px;}
+  .ob-entry-row{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin-bottom:8px;}
+  .ob-entry-row label{font-size:13px;color:var(--text);}
+  .ob-entry-row input{padding:7px 10px;font-size:13px;font-family:var(--mono);background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none;text-align:right;}
+  .ob-entry-row input:focus{border-color:#1D9E75;}
   .msg{font-size:12px;padding:7px 10px;border-radius:6px;margin-bottom:10px;}
   .msg.ok{background:rgba(15,110,86,0.1);color:var(--green);}
   .msg.err{background:rgba(163,45,45,0.1);color:var(--red);}
@@ -215,6 +238,15 @@ function forgotPassword(){
       <span id="auth-forgot-wrap"><a href="#" onclick="forgotPassword();return false" style="color:var(--text2)">Forgot password?</a></span>
     </p>
     <p style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center">Your username is your email address</p>
+  </div>
+</div>
+
+<!-- Onboarding overlay -->
+<div id="onboarding-overlay">
+  <div class="onboarding-box">
+    <button class="ob-dismiss" onclick="dismissOnboarding()" title="Don't show again">✕ Don't show again</button>
+    <div class="ob-step-indicator" id="ob-dots"></div>
+    <div id="ob-content"></div>
   </div>
 </div>
 
@@ -501,6 +533,173 @@ function getCatPieData(){
 /* ─────────────────────────────────────────
    Dashboard
 ───────────────────────────────────────── */
+/* ─────────────────────────────────────────
+   Onboarding
+───────────────────────────────────────── */
+let obStep=1;
+const OB_STEPS=4;
+const OB_CATS=['Brokerage','Savings','Retirement','Real Estate','HSA','Crypto','Business','529','Other'];
+
+function shouldShowOnboarding(s){
+  if(!s) return false;
+  if(s.onboarding_dismissed) return false;
+  if(entries.length>0) return false; // has data already
+  const trialStart=s.trial_start;
+  if(!trialStart) return false;
+  const daysSince=(Date.now()-new Date(trialStart).getTime())/(1000*60*60*24);
+  return daysSince<=30;
+}
+
+function showOnboarding(){
+  obStep=1;
+  $('onboarding-overlay').style.display='flex';
+  renderObStep();
+}
+
+function hideOnboarding(){
+  $('onboarding-overlay').style.display='none';
+}
+
+async function dismissOnboarding(){
+  hideOnboarding();
+  if(currentUser){
+    await sb.from('user_settings').upsert({
+      user_id:currentUser.id,
+      onboarding_dismissed:true,
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
+  }
+}
+
+function renderObDots(){
+  const el=$('ob-dots');
+  if(!el) return;
+  el.innerHTML=Array.from({length:OB_STEPS},(_,i)=>{
+    const n=i+1;
+    const cls=n===obStep?'active':n<obStep?'done':'';
+    return `<div class="ob-step-dot ${cls}"></div>`;
+  }).join('');
+}
+
+function renderObStep(){
+  renderObDots();
+  const el=$('ob-content');
+  if(!el) return;
+
+  if(obStep===1){
+    el.innerHTML=`
+      <div class="ob-title">Welcome to Networth.fyi 👋</div>
+      <div class="ob-sub">Let's get your net worth set up in 3 quick steps. We'll walk you through adding your accounts, entering your first values, then you'll see your dashboard come to life.<br><br>This takes about 3 minutes.</div>
+      <div class="ob-footer">
+        <button class="ob-skip" onclick="hideOnboarding()">Do this later</button>
+        <button class="primary" onclick="obNext()">Let's go →</button>
+      </div>`;
+
+  } else if(obStep===2){
+    // Build account rows from current accounts
+    const rows=accounts.map((a,i)=>`
+      <div class="ob-account-row" id="ob-acc-${i}">
+        <input type="text" value="${esc(a.name)}" placeholder="Account name" data-idx="${i}" oninput="obUpdateAccount(${i},'name',this.value)"/>
+        <select data-idx="${i}" onchange="obUpdateAccount(${i},'cat',this.value)">
+          ${OB_CATS.map(c=>`<option value="${c}"${a.cat===c?' selected':''}>${c}</option>`).join('')}
+        </select>
+        <button onclick="obRemoveAccount(${i})" style="font-size:14px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px;">✕</button>
+      </div>`).join('');
+
+    el.innerHTML=`
+      <div class="ob-title">Set up your accounts</div>
+      <div class="ob-sub">Rename the default accounts to match yours, change their categories, or add new ones. You can always change these later.</div>
+      <div id="ob-account-list">${rows}</div>
+      <button class="ob-add-btn" onclick="obAddAccount()">+ Add another account</button>
+      <div class="ob-footer">
+        <button class="ob-skip" onclick="hideOnboarding()">Do this later</button>
+        <button class="primary" onclick="obSaveAccountsAndNext()">Save & continue →</button>
+      </div>`;
+
+  } else if(obStep===3){
+    const rows=activeAccounts().map((a,i)=>`
+      <div class="ob-entry-row">
+        <label>${esc(a.name)}<span style="font-size:10px;color:var(--text3);margin-left:6px;">${esc(a.cat)}</span></label>
+        <input type="number" id="ob-val-${i}" data-acc="${esc(a.name)}" placeholder="0" min="0" step="1"/>
+      </div>`).join('');
+
+    el.innerHTML=`
+      <div class="ob-title">Enter your first values</div>
+      <div class="ob-sub">Enter today's balance for each account. Don't worry about being exact — you can update any time.<br><br><span style="color:var(--text3);font-size:12px;">💡 Have historical data? You can add past entries in the History tab after setup.</span></div>
+      <div style="max-height:280px;overflow-y:auto;padding-right:4px;">${rows}</div>
+      <div class="ob-footer">
+        <button class="ob-skip" onclick="hideOnboarding()">Skip for now</button>
+        <button class="primary" onclick="obSaveEntryAndNext()">Save & see dashboard →</button>
+      </div>`;
+
+  } else if(obStep===4){
+    hideOnboarding();
+    renderDash();
+  }
+}
+
+function obUpdateAccount(idx, field, val){
+  if(accounts[idx]) accounts[idx][field===('cat')?'cat':'name']=val;
+}
+
+function obRemoveAccount(idx){
+  accounts.splice(idx,1);
+  renderObStep();
+}
+
+function obAddAccount(){
+  accounts.push({name:'',cat:'Savings',liquid:false,archived:false});
+  renderObStep();
+  // Focus the new input
+  setTimeout(()=>{
+    const rows=document.querySelectorAll('.ob-account-row input[type=text]');
+    if(rows.length) rows[rows.length-1].focus();
+  },50);
+}
+
+async function obSaveAccountsAndNext(){
+  // Remove empty accounts
+  accounts=accounts.filter(a=>a.name.trim());
+  if(!accounts.length){
+    accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+  }
+  persistAccounts();
+  obStep=3;
+  renderObStep();
+}
+
+async function obSaveEntryAndNext(){
+  const inputs=document.querySelectorAll('#ob-content input[data-acc]');
+  const values={};
+  inputs.forEach(inp=>{
+    const v=parseFloat(inp.value)||0;
+    if(v>0) values[inp.dataset.acc]=v;
+  });
+
+  if(Object.keys(values).length>0){
+    const today=new Date().toISOString().split('T')[0];
+    const entry={date:today,values};
+    entries.push(entry);
+    entries.sort((a,b)=>a.date<b.date?-1:1);
+    persist();
+    if(currentUser){
+      setSyncBar('Saving...');
+      try{
+        await saveEntryToSupabase(entry);
+        setSyncBar('Saved ✓','var(--green)');
+        setTimeout(()=>setSyncBar(''),2000);
+      }catch(e){setSyncBar('');}
+    }
+  }
+  obStep=4;
+  renderObStep();
+}
+
+function obNext(){
+  obStep++;
+  renderObStep();
+}
+
 function renderDash(){
   const el=$('pane-dashboard');
   if(!entries.length){
@@ -1769,6 +1968,12 @@ async function loadFromSupabase(){
       birthday:s?.birthday||'',
       goalAmount:s?.goal_amount||''
     };
+
+    // Check onboarding
+    if(shouldShowOnboarding(s)){
+      // Show after dashboard renders
+      setTimeout(()=>showOnboarding(),300);
+    }
 
     // Check subscription access
     const access=checkAccess(s ? s : {trial_start:trialStart,subscription_status:'trialing'});
