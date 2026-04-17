@@ -1688,6 +1688,7 @@ async function loadFromSupabase(){
 
     // Check subscription access
     const access=checkAccess(s ? s : {trial_start:trialStart,subscription_status:'trialing'});
+    console.log('[ACCESS CHECK]', JSON.stringify({s_trial:s?.trial_start, s_status:s?.subscription_status, access}));
     if(!access.allowed){
       sessionStorage.setItem('nw_paywall','1');
       showPaywall();
@@ -1896,6 +1897,7 @@ async function bootUser(user){
   await loadFromSupabase();
   loadSettings();
 
+  console.log('[BOOTUSER END] _accessGranted=', window._accessGranted);
   if(window._accessGranted){
     hidePaywall();
     renderDash();
