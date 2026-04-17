@@ -1909,26 +1909,31 @@ async function loadFromSupabase(){
   setSyncBar('');
   try{
     // Load accounts
+    console.log('[LOAD] 1 querying accounts...');
     const {data:accts,error:ae}=await sb.from('accounts').select('*').eq('user_id',currentUser.id).order('sort_order');
+    console.log('[LOAD] 1 done:', accts?.length, ae);
     if(ae){console.error('accounts error:',ae);throw ae;}
 
     // Load entries
+    console.log('[LOAD] 2 querying entries...');
     const {data:ents,error:ee}=await sb.from('entries').select('id,entry_date').eq('user_id',currentUser.id).order('entry_date');
+    console.log('[LOAD] 2 done:', ents?.length, ee);
     if(ee){console.error('entries error:',ee);throw ee;}
 
     let entryValues=[];
     if(ents&&ents.length>0){
       const entryIds=ents.map(e=>e.id);
+      console.log('[LOAD] 3 querying entry_values...');
       const {data:vals,error:ve}=await sb.from('entry_values').select('*').in('entry_id',entryIds);
+      console.log('[LOAD] 3 done:', vals?.length, ve);
       if(ve){console.error('values error:',ve);throw ve;}
       entryValues=vals||[];
     }
 
-    // Load settings (ignore error — just use defaults)
+    // Load settings
+    console.log('[LOAD] 4 querying settings...');
     const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
-
-    // Map accounts
-    console.log('[LOAD] accounts from Supabase:', accts?.length, accts?.map(a=>a.name));
+    console.log('[LOAD] 4 done:', s?.subscription_status);
     if(accts&&accts.length>0){
       accounts=accts.map(a=>({name:a.name,cat:a.category,liquid:a.liquid,archived:a.archived,_id:a.id}));
     } else {
