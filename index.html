@@ -2084,7 +2084,7 @@ function persist(){
 }
 function persistAccounts(){
   try{localStorage.setItem('nw_accounts',JSON.stringify(accounts));}catch(e){}
-  if(currentUser) saveAccountsToSupabase();
+  if(currentUser && window._accessGranted) saveAccountsToSupabase();
 }
 function persistSettings(){
   try{localStorage.setItem('nw_settings',JSON.stringify(settings));}catch(e){}
@@ -2177,7 +2177,6 @@ async function bootUser(user){
   $('pane-dashboard').innerHTML=`<div style="padding:60px 0;text-align:center;color:var(--text2);font-size:13px;letter-spacing:.02em">Loading...</div>`;
 
   await loadFromSupabase();
-  loadSettings();
 
   if(window._accessGranted){
     hidePaywall();
