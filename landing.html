@@ -211,157 +211,353 @@ footer nav a:hover{color:var(--text2);}
 
 <hr class="divider"/>
 
-<!-- App mockup section -->
+<!-- Interactive demo section -->
 <section id="preview" class="section">
   <div class="reveal">
     <p class="section-label">See it in action</p>
-    <h2 class="section-title">Built for people who<br>take money seriously.</h2>
-    <p class="section-sub">A clean, fast dashboard that shows exactly where you stand — and where you're going.</p>
+    <h2 class="section-title">Try the dashboard.<br>No sign-up needed.</h2>
+    <p class="section-sub">Click a category, filter the chart, toggle between $ and % — this is the real thing.</p>
   </div>
 
-  <!-- Dashboard mockup -->
-  <div class="reveal reveal-delay" style="margin-top:48px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
-    <!-- Mock sidebar -->
-    <div style="display:flex;min-height:480px;">
-      <div style="width:180px;background:#111113;border-right:1px solid var(--border);padding:20px 12px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--text);padding:0 8px 16px;border-bottom:1px solid var(--border);margin-bottom:8px;">Networth.fyi</div>
-        <div style="padding:8px 12px;border-radius:8px;background:var(--bg3);font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px;"><span>◎</span> Dashboard</div>
-        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span>＋</span> Entry</div>
-        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span>≡</span> History</div>
-        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span>⊞</span> Accounts</div>
-        <div style="margin-top:auto;padding:8px 12px;border-radius:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span>⚙</span> Settings</div>
-      </div>
-      <!-- Mock content -->
-      <div style="flex:1;padding:24px;overflow:hidden;">
-        <!-- Cards + category row -->
-        <div style="display:grid;grid-template-columns:160px 1fr;gap:14px;margin-bottom:20px;">
-          <!-- Cards -->
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;">Net worth</div>
-              <div style="font-size:18px;font-family:var(--mono);font-weight:500;color:var(--text);">$1,284,390</div>
-            </div>
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;">Since last entry</div>
-              <div style="font-size:16px;font-family:var(--mono);font-weight:500;color:var(--green);">+$42,180</div>
-              <div style="font-size:10px;color:var(--green);">+3.4%</div>
-            </div>
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;">Liquid assets</div>
-              <div style="font-size:16px;font-family:var(--mono);font-weight:500;color:var(--green);">$186,420</div>
-            </div>
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;">Avg/month (3mo)</div>
-              <div style="font-size:16px;font-family:var(--mono);font-weight:500;color:var(--green);">+$8,240</div>
-              <div style="font-size:10px;color:var(--green);">+0.7% / mo</div>
-            </div>
-          </div>
-          <!-- Category table -->
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:10px 12px;border-bottom:1px solid var(--border);">By category</div>
-            ${[
-              ['Real Estate','$487,200','+$44,100','(+10%)','var(--green)'],
-              ['Retirement','$312,840','+$28,340','(+10%)','var(--green)'],
-              ['Business','$224,500','+$18,200','(+8.8%)','var(--green)'],
-              ['Brokerage','$148,200','+$6,820','(+4.8%)','var(--green)'],
-              ['Savings','$72,400','-$2,100','(-2.8%)','#f09595'],
-              ['HSA','$38,250','+$1,240','(+3.3%)','var(--green)'],
-            ].map(([cat,val,chg,pct,col],i)=>`
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;${i>0?'border-top:1px solid var(--border)':''}">
-              <span style="font-size:11px;color:var(--text2);">${cat} <span style="color:var(--text3);font-size:10px;">›</span></span>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <span style="font-size:10px;font-family:var(--mono);color:${col};">${chg} ${pct}</span>
-                <span style="font-size:11px;font-family:var(--mono);color:var(--text);">${val}</span>
-              </div>
-            </div>`).join('')}
-          </div>
+  <div class="reveal reveal-delay" style="margin-top:44px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#111113;">
+    <!-- Demo shell -->
+    <div style="display:flex;min-height:600px;" id="demo-shell">
+      <!-- Sidebar -->
+      <nav style="width:190px;background:#0e0e10;border-right:1px solid rgba(255,255,255,0.07);padding:20px 12px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:#f0ede8;padding:0 8px 16px;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:8px;">Networth.fyi</div>
+        <div style="padding:8px 12px;border-radius:8px;background:#1a1a1d;font-size:12px;color:#f0ede8;display:flex;align-items:center;gap:8px;"><span>◎</span> Dashboard</div>
+        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:#8a8580;display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:.5;"><span>＋</span> Entry</div>
+        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:#8a8580;display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:.5;"><span>≡</span> History</div>
+        <div style="padding:8px 12px;border-radius:8px;font-size:12px;color:#8a8580;display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:.5;"><span>⊞</span> Accounts</div>
+        <div style="margin-top:auto;padding:8px 12px;border-radius:8px;font-size:12px;color:#8a8580;display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:.5;"><span>⚙</span> Settings</div>
+        <div style="padding:8px 4px;margin-top:4px;border-top:1px solid rgba(255,255,255,0.07);">
+          <div style="font-size:10px;color:#5a5550;padding:0 8px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">demo@networth.fyi</div>
         </div>
+      </nav>
 
-        <!-- Mini net worth chart (SVG) -->
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
-          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:10px;">Net worth over time</div>
-          <svg viewBox="0 0 520 90" style="width:100%;height:90px;" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#1D9E75" stop-opacity="0.18"/>
-                <stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-            <!-- Grid lines -->
-            <line x1="0" y1="20" x2="520" y2="20" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-            <line x1="0" y1="45" x2="520" y2="45" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-            <line x1="0" y1="70" x2="520" y2="70" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-            <!-- Area fill -->
-            <path d="M0,82 L40,80 L80,78 L120,76 L160,73 L200,70 L240,65 L280,58 L310,52 L340,42 L370,32 L400,24 L430,18 L460,12 L520,8 L520,90 L0,90 Z" fill="url(#chartGrad)"/>
-            <!-- Line -->
-            <path d="M0,82 L40,80 L80,78 L120,76 L160,73 L200,70 L240,65 L280,58 L310,52 L340,42 L370,32 L400,24 L430,18 L460,12 L520,8" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <!-- Forecast dashed -->
-            <path d="M460,12 L490,7 L520,4" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.6"/>
-            <!-- Dots -->
-            <circle cx="340" cy="42" r="3" fill="#1D9E75"/>
-            <circle cx="460" cy="12" r="3" fill="#1D9E75"/>
-          </svg>
-        </div>
+      <!-- Main pane -->
+      <div style="flex:1;padding:24px 28px;overflow-y:auto;min-width:0;" id="demo-main">
+        <!-- populated by JS -->
       </div>
     </div>
-  </div>
-
-  <!-- Category drilldown mockup -->
-  <div class="reveal reveal-delay2" style="margin-top:16px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
-    <div style="display:flex;min-height:320px;">
-      <!-- Sidebar (collapsed) -->
-      <div style="width:180px;background:#111113;border-right:1px solid var(--border);padding:20px 12px;flex-shrink:0;">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--text);padding:0 8px 16px;border-bottom:1px solid var(--border);margin-bottom:8px;">Networth.fyi</div>
-        <div style="padding:8px 12px;border-radius:8px;background:var(--bg3);font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px;"><span>◎</span> Dashboard</div>
-      </div>
-      <!-- Drilldown content -->
-      <div style="flex:1;padding:24px;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
-          <div style="font-size:11px;color:var(--text2);border:1px solid var(--border);padding:4px 10px;border-radius:6px;">← All categories</div>
-          <span style="font-size:16px;font-weight:500;">Retirement</span>
-          <span style="font-size:13px;font-family:var(--mono);color:var(--green);">+$130,448 (+47.2%)</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <!-- Mini chart -->
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;">
-            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:8px;">Retirement over time</div>
-            <svg viewBox="0 0 240 70" style="width:100%;height:70px;" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#378ADD" stop-opacity="0.15"/>
-                  <stop offset="100%" stop-color="#378ADD" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <line x1="0" y1="20" x2="240" y2="20" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-              <line x1="0" y1="45" x2="240" y2="45" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-              <path d="M0,65 L40,60 L80,55 L120,48 L160,40 L200,28 L240,10 L240,70 L0,70 Z" fill="url(#blueGrad)"/>
-              <path d="M0,65 L40,60 L80,55 L120,48 L160,40 L200,28 L240,10" fill="none" stroke="#378ADD" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <!-- Accounts table -->
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-            <div style="display:grid;grid-template-columns:1fr 70px 70px 60px;background:rgba(255,255,255,0.03);padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);border-bottom:1px solid var(--border);">
-              <span>Account</span><span style="text-align:right">Current</span><span style="text-align:right">Change</span><span style="text-align:right">Chg%</span>
-            </div>
-            ${[
-              ['Roth IRA','$52,840','+$12,200','+30%'],
-              ['401(k)','$164,325','+$86,710','+112%'],
-              ['Spouse Roth','$46,357','—','—'],
-              ['Old 401(k)','$21,211','+$19,465','+1100%'],
-              ['HSA Invest','$28,107','+$12,073','+75%'],
-            ].map(([name,val,chg,pct],i)=>`
-            <div style="display:grid;grid-template-columns:1fr 70px 70px 60px;padding:7px 10px;align-items:center;${i>0?'border-top:1px solid var(--border)':''}">
-              <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
-              <span style="font-size:11px;font-family:var(--mono);text-align:right;color:var(--text);">${val}</span>
-              <span style="font-size:11px;font-family:var(--mono);text-align:right;color:${chg==='—'?'var(--text3)':'var(--green)'};">${chg}</span>
-              <span style="font-size:11px;font-family:var(--mono);text-align:right;color:${pct==='—'?'var(--text3)':'var(--green)'};">${pct}</span>
-            </div>`).join('')}
-          </div>
-        </div>
-      </div>
+    <div style="padding:10px 16px;border-top:1px solid rgba(255,255,255,0.05);background:#0e0e10;text-align:center;">
+      <span style="font-size:11px;color:#5a5550;">Interactive demo — read only &nbsp;·&nbsp; </span>
+      <a href="/index.html" style="font-size:11px;color:#1D9E75;text-decoration:none;">Start your free trial →</a>
     </div>
   </div>
 </section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+// ── Demo data ─────────────────────────────────────────────────────────
+const MONTHS = [
+  '2021-01','2021-02','2021-03','2021-04','2021-05','2021-06',
+  '2021-07','2021-08','2021-09','2021-10','2021-11','2021-12',
+  '2022-01','2022-02','2022-03','2022-04','2022-05','2022-06',
+  '2022-07','2022-08','2022-09','2022-10','2022-11','2022-12',
+  '2023-01','2023-02','2023-03','2023-04','2023-05','2023-06',
+  '2023-07','2023-08','2023-09','2023-10','2023-11','2023-12',
+  '2024-01','2024-02','2024-03','2024-04','2024-05','2024-06',
+  '2024-07','2024-08','2024-09','2024-10','2024-11','2024-12',
+];
+
+// Net worth values per month
+const NW = [
+  280000,292000,301000,315000,328000,340000,
+  352000,361000,370000,379000,388000,398000,
+  406000,412000,418000,409000,397000,388000,
+  381000,375000,372000,378000,386000,397000,
+  412000,428000,445000,462000,481000,502000,
+  524000,543000,562000,578000,596000,618000,
+  642000,671000,703000,738000,768000,802000,
+  841000,878000,916000,958000,1008000,1064000,
+];
+
+// Category data (current snapshot = last month)
+const CATS = [
+  { name:'Real Estate', color:'#1D9E75', accounts:[
+    {name:'Home Equity', val:420000, first:180000},
+    {name:'Rental Property', val:118000, first:62000},
+  ]},
+  { name:'Retirement', color:'#378ADD', accounts:[
+    {name:'401(k)', val:164325, first:68000},
+    {name:'Roth IRA', val:52840, first:28000},
+    {name:'Spouse 401(k)', val:48200, first:null},
+    {name:'Spouse Roth', val:34800, first:null},
+  ]},
+  { name:'Brokerage', color:'#E24B4A', accounts:[
+    {name:'Personal Brokerage', val:98400, first:54000},
+    {name:'Spouse Brokerage', val:56200, first:32000},
+  ]},
+  { name:'Savings', color:'#EF9F27', accounts:[
+    {name:'High-Yield Savings', val:72400, first:40000},
+    {name:'Checking', val:14200, first:12000},
+  ]},
+  { name:'HSA', color:'#D4537E', accounts:[
+    {name:'HSA Investment', val:28600, first:8000},
+    {name:'HSA Cash', val:12800, first:6000},
+  ]},
+];
+
+// Build per-category time series (proportional allocation)
+const CAT_NW = {};
+CATS.forEach(c=>{
+  const pct = c.accounts.reduce((s,a)=>s+a.val,0) / NW[NW.length-1];
+  CAT_NW[c.name] = NW.map(v=>Math.round(v*pct));
+});
+
+// State
+let demoFilter = 'all';
+let demoCat = null;
+let demomomMode = '$';
+let lineChart = null;
+let momChart = null;
+
+// Helpers
+const fmt = v => '$' + Math.round(v).toLocaleString();
+const fmtD = v => (v>=0?'+':'')+fmt(Math.abs(v)).replace('$',v<0?'-$':'$');
+const mono = 'DM Mono, monospace';
+const pill = (label, active, fn) =>
+  `<button onclick="${fn}" style="padding:3px 12px;font-size:11px;border-radius:20px;cursor:pointer;font-family:DM Sans,sans-serif;border:1px solid ${active?'#1D9E75':'rgba(255,255,255,0.12)'};background:${active?'#1D9E75':'transparent'};color:${active?'#fff':'#8a8580'};transition:all .15s">${label}</button>`;
+
+function getFilteredIndices(){
+  const n = MONTHS.length;
+  if(demoFilter==='all') return [0, n-1];
+  const months = demoFilter==='3y'?36:demoFilter==='1y'?12:6;
+  return [Math.max(0, n-months), n-1];
+}
+
+function getMoM(series, from, to){
+  const result=[];
+  for(let i=from+1;i<=to;i++){
+    const diff=series[i]-series[i-1];
+    const pct=series[i-1]?Math.round(diff/series[i-1]*10000)/100:0;
+    result.push({label:MONTHS[i],diff:Math.round(diff),pct});
+  }
+  return result;
+}
+
+function renderDemo(){
+  const el = document.getElementById('demo-main');
+  if(!el) return;
+
+  const [from, to] = getFilteredIndices();
+  const last = NW[NW.length-1];
+  const prev = NW[NW.length-2];
+  const diff = last - prev;
+  const pct = (diff/prev*100).toFixed(1);
+
+  if(demoCat !== null){
+    renderDrilldown(el);
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:170px 1fr;gap:14px;margin-bottom:20px;">
+      <!-- Cards -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${card('Net worth', fmt(last))}
+        ${card('Since last entry', fmtD(diff), (diff>=0?'#1D9E75':'#f09595'), `${diff>=0?'+':''}${pct}%`)}
+        ${card('Liquid assets', fmt(154800), '#1D9E75')}
+        ${card('Avg / month (3mo)', fmtD(28400), '#1D9E75', '+2.8% / mo')}
+      </div>
+      <!-- Category table -->
+      <div style="background:#1a1a1d;border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.07);">By category</div>
+        ${CATS.map((c,i)=>{
+          const val=c.accounts.reduce((s,a)=>s+a.val,0);
+          const firstVal=c.accounts.reduce((s,a)=>s+(a.first||0),0);
+          const cd=val-firstVal;
+          const cp=(firstVal?(cd/firstVal*100):0).toFixed(1);
+          return `<div onclick="demoDrillCat('${c.name}')" style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;cursor:pointer;transition:background .12s;${i>0?'border-top:1px solid rgba(255,255,255,0.05)':''}" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+            <span style="font-size:12px;color:#d0cdc8;">${c.name} <span style="font-size:10px;color:#5a5550;">›</span></span>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <span style="font-size:11px;font-family:${mono};color:${cd>=0?'#1D9E75':'#f09595'};">${cd>=0?'+':''}${fmt(Math.abs(cd)).replace('$',cd<0?'-$':'$')} (${cd>=0?'+':''}${cp}%)</span>
+              <span style="font-size:12px;font-family:${mono};color:#f0ede8;">${fmt(val)}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Line chart -->
+    <div style="background:#1a1a1d;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;margin-bottom:10px;">Net worth over time</div>
+      <div style="display:flex;gap:5px;margin-bottom:10px;">
+        ${pill('All',demoFilter==='all',"setDemoFilter('all')")}
+        ${pill('3Y',demoFilter==='3y',"setDemoFilter('3y')")}
+        ${pill('1Y',demoFilter==='1y',"setDemoFilter('1y')")}
+        ${pill('6M',demoFilter==='6m',"setDemoFilter('6m')")}
+      </div>
+      <div style="height:180px;position:relative;"><canvas id="demo-line"></canvas></div>
+    </div>
+
+    <!-- MoM chart -->
+    <div style="background:#1a1a1d;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;margin-bottom:10px;">Month-over-month change</div>
+      <div style="display:flex;gap:5px;margin-bottom:10px;">
+        ${pill('$',demomomMode==='$',"setMomMode('$')")}
+        ${pill('%',demomomMode==='%',"setMomMode('%')")}
+      </div>
+      <div style="height:140px;position:relative;"><canvas id="demo-mom"></canvas></div>
+    </div>
+  `;
+
+  // Render line chart
+  setTimeout(()=>{
+    if(lineChart){lineChart.destroy();lineChart=null;}
+    if(momChart){momChart.destroy();momChart=null;}
+
+    const [f,t] = getFilteredIndices();
+    const labels = MONTHS.slice(f, t+1);
+    const data = NW.slice(f, t+1);
+    const ctx = document.getElementById('demo-line');
+    if(ctx){
+      lineChart = new Chart(ctx,{
+        type:'line',
+        data:{labels,datasets:[{
+          label:'Net worth',data,
+          borderColor:'#1D9E75',
+          backgroundColor:'rgba(29,158,117,0.08)',
+          fill:true,tension:0.35,
+          pointRadius:data.length>20?1:3,
+          pointBackgroundColor:'#1D9E75',
+          borderWidth:2
+        }]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+          scales:{
+            y:{ticks:{callback:v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':'$'+(v/1000).toFixed(0)+'k',font:{size:10},color:'#5a5550'},grid:{color:'rgba(255,255,255,0.05)'}},
+            x:{ticks:{font:{size:9},color:'#5a5550',maxTicksLimit:8},grid:{display:false}}
+          }
+        }
+      });
+    }
+
+    // MoM chart
+    const md = getMoM(NW, f, t);
+    const momCtx = document.getElementById('demo-mom');
+    if(momCtx && md.length){
+      const usePct = demomomMode==='%';
+      const vals = md.map(d=>usePct?d.pct:d.diff);
+      const step = Math.ceil(md.length/14);
+      const momLabels = md.map((d,i)=>i%step===0?d.label:'');
+      momChart = new Chart(momCtx,{
+        type:'bar',
+        data:{labels:momLabels,datasets:[{
+          data:vals,
+          backgroundColor:vals.map(v=>v>=0?'rgba(29,158,117,0.7)':'rgba(240,149,149,0.7)'),
+          borderColor:vals.map(v=>v>=0?'#1D9E75':'#f09595'),
+          borderWidth:1,borderRadius:2
+        }]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{callbacks:{
+            title:(_,[{dataIndex}])=>md[dataIndex].label,
+            label:c=>{const d=md[c.dataIndex];return usePct?[`${d.pct>=0?'+':''}${d.pct}%`,fmt(d.diff)]:[fmt(d.diff),`${d.pct>=0?'+':''}${d.pct}%`];}
+          }}},
+          scales:{
+            y:{ticks:{callback:v=>usePct?`${v>0?'+':''}${v}%`:(v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v),font:{size:9},color:'#5a5550'},grid:{color:'rgba(255,255,255,0.05)'},border:{dash:[3,3]}},
+            x:{ticks:{font:{size:9},color:'#5a5550'},grid:{display:false}}
+          }
+        }
+      });
+    }
+  }, 50);
+}
+
+function card(label, value, valueColor='#f0ede8', sub=''){
+  return `<div style="background:#1a1a1d;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;">
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;margin-bottom:5px;">${label}</div>
+    <div style="font-size:17px;font-family:${mono};font-weight:500;color:${valueColor};">${value}</div>
+    ${sub?`<div style="font-size:10px;color:${valueColor};margin-top:2px;">${sub}</div>`:''}
+  </div>`;
+}
+
+function renderDrilldown(el){
+  const c = CATS.find(x=>x.name===demoCat);
+  if(!c){demoCat=null;renderDemo();return;}
+  const total = c.accounts.reduce((s,a)=>s+a.val,0);
+  const firstTotal = c.accounts.reduce((s,a)=>s+(a.first||0),0);
+  const totalChg = total-firstTotal;
+  const totalPct = firstTotal?(totalChg/firstTotal*100):0;
+
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+      <button onclick="demoDrillCat(null)" style="font-size:11px;color:#8a8580;border:1px solid rgba(255,255,255,0.12);padding:4px 10px;border-radius:6px;background:transparent;cursor:pointer;font-family:DM Sans,sans-serif;">← All categories</button>
+      <span style="font-size:16px;font-weight:500;color:#f0ede8;">${c.name}</span>
+      <span style="font-size:13px;font-family:${mono};color:#1D9E75;">${fmtD(totalChg)} (+${totalPct.toFixed(1)}%)</span>
+    </div>
+
+    <!-- Category line chart -->
+    <div style="background:#1a1a1d;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;margin-bottom:10px;">${c.name} over time</div>
+      <div style="display:flex;gap:5px;margin-bottom:10px;">
+        ${pill('All',demoFilter==='all',"setDemoFilter('all')")}
+        ${pill('3Y',demoFilter==='3y',"setDemoFilter('3y')")}
+        ${pill('1Y',demoFilter==='1y',"setDemoFilter('1y')")}
+        ${pill('6M',demoFilter==='6m',"setDemoFilter('6m')")}
+      </div>
+      <div style="height:160px;"><canvas id="demo-cat-line"></canvas></div>
+    </div>
+
+    <!-- Accounts table -->
+    <div style="background:#1a1a1d;border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 90px 90px 70px;background:rgba(255,255,255,0.03);padding:7px 12px;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#5a5550;border-bottom:1px solid rgba(255,255,255,0.07);">
+        <span>Account</span><span style="text-align:right">Current</span><span style="text-align:right">Change $</span><span style="text-align:right">Chg %</span>
+      </div>
+      ${c.accounts.map((a,i)=>{
+        const chg = a.first!=null?a.val-a.first:null;
+        const pct = a.first&&chg!=null?(chg/a.first*100):null;
+        return `<div style="display:grid;grid-template-columns:1fr 90px 90px 70px;padding:8px 12px;align-items:center;${i>0?'border-top:1px solid rgba(255,255,255,0.05)':''}">
+          <span style="font-size:12px;color:#d0cdc8;">${a.name}</span>
+          <span style="font-size:12px;font-family:${mono};text-align:right;color:#f0ede8;">${fmt(a.val)}</span>
+          <span style="font-size:12px;font-family:${mono};text-align:right;color:${chg==null?'#5a5550':chg>=0?'#1D9E75':'#f09595'};">${chg==null?'—':fmtD(chg)}</span>
+          <span style="font-size:12px;font-family:${mono};text-align:right;color:${pct==null?'#5a5550':pct>=0?'#1D9E75':'#f09595'};">${pct==null?'—':(pct>=0?'+':'')+pct.toFixed(1)+'%'}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+
+  setTimeout(()=>{
+    if(lineChart){lineChart.destroy();lineChart=null;}
+    const [f,t]=getFilteredIndices();
+    const series=CAT_NW[c.name];
+    const ctx=document.getElementById('demo-cat-line');
+    if(ctx&&series){
+      lineChart=new Chart(ctx,{
+        type:'line',
+        data:{labels:MONTHS.slice(f,t+1),datasets:[{
+          label:c.name,data:series.slice(f,t+1),
+          borderColor:c.color,
+          backgroundColor:c.color.replace(')',',0.08)').replace('rgb','rgba'),
+          fill:true,tension:0.35,pointRadius:2,borderWidth:2
+        }]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
+          scales:{
+            y:{ticks:{callback:v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':'$'+(v/1000).toFixed(0)+'k',font:{size:10},color:'#5a5550'},grid:{color:'rgba(255,255,255,0.05)'}},
+            x:{ticks:{font:{size:9},color:'#5a5550',maxTicksLimit:8},grid:{display:false}}
+          }
+        }
+      });
+    }
+  },50);
+}
+
+// Global functions called from onclick
+window.demoDrillCat = function(name){demoCat=name;renderDemo();};
+window.setDemoFilter = function(f){demoFilter=f;renderDemo();};
+window.setMomMode = function(m){demomomMode=m;renderDemo();};
+
+// Init
+renderDemo();
+})();
+</script>
+
 <section id="features" class="section">
   <div class="reveal">
     <p class="section-label">Everything you need</p>
