@@ -1439,12 +1439,13 @@ async function submitAuth(){
   $('auth-btn').textContent='...';$('auth-btn').disabled=true;
   try{
     if(authTab==='login'){
-      const {error}=await sb.auth.signInWithPassword({email,password});
+      const {data,error}=await sb.auth.signInWithPassword({email,password});
       if(error) throw error;
+      await bootUser(data.user);
     } else {
       const {error}=await sb.auth.signUp({email,password});
       if(error) throw error;
-      $('auth-ok').textContent='Account created! Check your email to confirm.';
+      $('auth-ok').textContent='Account created! Check your email to confirm, then sign in.';
       $('auth-btn').textContent='Create account';$('auth-btn').disabled=false;
       return;
     }
@@ -1465,6 +1466,12 @@ async function forgotPassword(){
 
 async function signOut(){
   await sb.auth.signOut();
+  currentUser=null;
+  entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
+  window._accessGranted=false;
+  window._paywallActive=false;
+  sessionStorage.removeItem('nw_paywall');
+  showAuth();
 }
 
 function showAuth(){
@@ -1895,17 +1902,6 @@ async function bootUser(user){
   }
 }
 
-// Only handle sign-in and sign-out events — not initial page load
-sb.auth.onAuthStateChange(async(event,session)=>{
-  if(event==='SIGNED_IN'){
-    await bootUser(session.user);
-  } else if(event==='SIGNED_OUT'){
-    currentUser=null;
-    entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
-    showAuth();
-  }
-});
-
 // Re-check access when user returns to the tab
 document.addEventListener('visibilitychange',async()=>{
   if(document.visibilityState==='visible'&&currentUser&&!window._paywallActive){
@@ -1923,7 +1919,7 @@ document.addEventListener('visibilitychange',async()=>{
   }
 });
 
-// Initial page load — check for existing session
+// Single boot on page load
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
