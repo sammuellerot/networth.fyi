@@ -1926,6 +1926,7 @@ async function loadFromSupabase(){
     const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
 
     // Map accounts
+    console.log('[LOAD] accounts from Supabase:', accts?.length, accts?.map(a=>a.name));
     if(accts&&accts.length>0){
       accounts=accts.map(a=>({name:a.name,cat:a.category,liquid:a.liquid,archived:a.archived,_id:a.id}));
     } else {
@@ -2181,6 +2182,7 @@ async function bootUser(user){
 
   if(window._accessGranted){
     hidePaywall();
+    console.log('[BOOT] accounts at render time:', accounts.length, accounts.map(a=>a.name));
     const savedTab=sessionStorage.getItem('nw_tab');
     if(savedTab&&savedTab!=='dashboard'){
       switchTab(savedTab);
