@@ -35,11 +35,6 @@
   .plan-period{font-size:12px;color:var(--text2);margin-bottom:6px;}
   .plan-label{font-size:13px;font-weight:500;margin-bottom:4px;color:var(--text);}
   .plan-badge{font-size:10px;background:#1D9E75;color:#fff;border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:8px;}
-  /* ── Top bar when logged in ── */
-  #topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
-  #topbar .user-email{font-size:12px;color:var(--text2);}
-  #topbar button{font-size:12px;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit;background:transparent;border:1px solid var(--border2);color:var(--text2);}
-  #topbar button:hover{color:var(--text);}
   /* ── Sync status ── */
   #sync-bar{font-size:11px;color:var(--text2);text-align:right;margin-bottom:8px;min-height:14px;}
   :root{
@@ -48,7 +43,7 @@
     --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
     --green:#0f6e56;--red:#a32d2d;--amber:#854f0b;
     --radius:10px;--radius-sm:7px;
-    --mono:'Courier New',monospace;
+    --mono:'DM Mono','Courier New',monospace;
   }
   @media(prefers-color-scheme:dark){
     :root{
@@ -60,14 +55,45 @@
   }
   html,body{scrollbar-width:none;-ms-overflow-style:none;}
   html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:860px;margin:0 auto;padding:20px 20px 60px;}
-  .dash-top{display:grid;grid-template-columns:200px 1fr;gap:16px;margin-bottom:20px;align-items:start;}
+  /* ── Google Fonts ── */
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0;min-height:100vh;}
+  /* ── App shell ── */
+  #app{display:flex;min-height:100vh;}
+  /* ── Sidebar ── */
+  #sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:10;}
+  #sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+  #sidebar-logo .logo-text{font-size:17px;font-weight:600;letter-spacing:-.3px;color:var(--text);}
+  #sidebar-logo .logo-sub{font-size:10px;color:var(--text2);margin-top:1px;letter-spacing:.05em;text-transform:uppercase;}
+  #sidebar-nav{flex:1;padding:4px 10px;}
+  .tab{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;font-size:13px;background:transparent;border:none;border-radius:8px;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;font-weight:400;text-align:left;margin-bottom:2px;transition:background .12s,color .12s;}
+  .tab:hover{background:var(--bg);color:var(--text);}
+  .tab.active{background:var(--bg);color:var(--text);font-weight:500;}
+  .tab .tab-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+  #sidebar-footer{padding:12px 10px;border-top:1px solid var(--border);}
+  #sidebar-footer .user-email{font-size:11px;color:var(--text2);padding:0 4px;margin-bottom:6px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #sidebar-footer button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;font-size:12px;background:transparent;border:none;border-radius:7px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text2);transition:background .12s;}
+  #sidebar-footer button:hover{background:var(--bg);color:var(--text);}
+  /* ── Main content ── */
+  #main-content{margin-left:220px;flex:1;padding:28px 32px;max-width:900px;}
+  #sync-bar{font-size:11px;color:var(--text2);text-align:right;margin-bottom:12px;min-height:14px;}
+  /* ── Page header ── */
+  .page-header{margin-bottom:24px;}
+  .page-title{font-size:22px;font-weight:600;letter-spacing:-.3px;}
+  /* ── Dash layout ── */
+  .dash-top{display:grid;grid-template-columns:200px 1fr;gap:16px;margin-bottom:24px;align-items:start;}
   .dash-top .cards{display:flex;flex-direction:column;gap:8px;margin-bottom:0;}
-  @media(max-width:600px){.dash-top{grid-template-columns:1fr;}.dash-top .cards{flex-direction:row;flex-wrap:wrap;}}
-  h1{font-size:20px;font-weight:600;margin-bottom:16px;}
-  .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto;}
-  .tab{padding:8px 14px;font-size:13px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text2);font-family:inherit;margin-bottom:-1px;white-space:nowrap;}
-  .tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500;}
+  /* ── Mobile ── */
+  @media(max-width:680px){
+    #sidebar{width:100%;min-height:auto;position:relative;flex-direction:row;border-right:none;border-bottom:1px solid var(--border);}
+    #sidebar-nav{display:flex;flex-direction:row;padding:4px 8px;overflow-x:auto;}
+    #sidebar-logo,#sidebar-footer{display:none;}
+    .tab{white-space:nowrap;padding:7px 10px;}
+    #main-content{margin-left:0;padding:16px;}
+    #app{flex-direction:column;}
+    .dash-top{grid-template-columns:1fr;}
+    .dash-top .cards{flex-direction:row;flex-wrap:wrap;}
+  }
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;}
   .card{background:var(--bg2);border-radius:var(--radius-sm);padding:14px;}
   .card-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
@@ -181,30 +207,46 @@ function forgotPassword(){
   </div>
 </div>
 
-<!-- Main app — shown immediately, paywall renders inside pane-dashboard if needed -->
+<!-- Main app -->
 <div id="app" style="display:none">
-<div id="topbar">
-  <h1>Networth.fyi</h1>
-  <div style="display:flex;align-items:center;gap:12px">
-    <span class="user-email" id="user-email"></span>
-    <button onclick="signOut()">Sign out</button>
+  <nav id="sidebar">
+    <div id="sidebar-logo">
+      <div class="logo-text">Networth.fyi</div>
+      <div class="logo-sub">Personal Finance</div>
+    </div>
+    <div id="sidebar-nav">
+      <button class="tab active" onclick="switchTab('dashboard')">
+        <span class="tab-icon">◎</span> Dashboard
+      </button>
+      <button class="tab" onclick="switchTab('enter')">
+        <span class="tab-icon">＋</span> Entry
+      </button>
+      <button class="tab" onclick="switchTab('history')">
+        <span class="tab-icon">≡</span> History
+      </button>
+      <button class="tab" onclick="switchTab('manage')">
+        <span class="tab-icon">⊞</span> Accounts
+      </button>
+      <button class="tab" onclick="switchTab('settings')">
+        <span class="tab-icon">⚙</span> Settings
+      </button>
+    </div>
+    <div id="sidebar-footer">
+      <span class="user-email" id="user-email"></span>
+      <button onclick="signOut()">
+        <span style="font-size:13px">↪</span> Sign out
+      </button>
+    </div>
+  </nav>
+
+  <div id="main-content">
+    <div id="sync-bar"></div>
+    <div id="pane-dashboard"></div>
+    <div id="pane-enter"    style="display:none"></div>
+    <div id="pane-history"  style="display:none"></div>
+    <div id="pane-manage"   style="display:none"></div>
+    <div id="pane-settings" style="display:none"></div>
   </div>
-</div>
-<div id="sync-bar"></div>
-
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
-  <button class="tab" onclick="switchTab('enter')">Entry</button>
-  <button class="tab" onclick="switchTab('history')">History</button>
-  <button class="tab" onclick="switchTab('manage')">Manage accounts</button>
-  <button class="tab" onclick="switchTab('settings')">Settings</button>
-</div>
-
-<div id="pane-dashboard"></div>
-<div id="pane-enter"   style="display:none"></div>
-<div id="pane-history" style="display:none"></div>
-<div id="pane-manage"  style="display:none"></div>
-<div id="pane-settings" style="display:none"></div>
 </div><!-- end #app -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
