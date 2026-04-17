@@ -1598,7 +1598,10 @@ async function loadFromSupabase(){
     };
 
     // Check subscription access
+    console.log('DEBUG settings row:', JSON.stringify(s));
+    console.log('DEBUG trialStart:', trialStart);
     const access=checkAccess(s ? s : {trial_start:trialStart,subscription_status:'trialing'});
+    console.log('DEBUG access:', JSON.stringify(access));
     if(!access.allowed){
       showPaywall();
       setSyncBar('');
