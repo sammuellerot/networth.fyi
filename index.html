@@ -1482,7 +1482,7 @@ function paywallHTML(){
         <div style="font-size:11px;color:var(--text2);margin-top:8px">Pay once, use forever</div>
       </a>
     </div>
-    <p style="font-size:12px;color:var(--text2);margin-top:4px">Click a plan above to open the checkout page.<br>Already purchased? <a href="#" onclick="location.reload();return false" style="color:var(--green);text-decoration:underline">Click here to refresh and unlock</a></p>
+    <p style="font-size:12px;color:var(--text2);margin-top:4px">Click a plan above to open the checkout page.<br>Already purchased? <a href="#" onclick="verifyAndUnlock();return false" style="color:var(--green);text-decoration:underline">Click here to verify and unlock</a></p>
     <p style="font-size:12px;color:var(--text2);margin-top:12px">Questions? <a href="mailto:hello@networth.fyi" style="color:var(--text2);text-decoration:underline">hello@networth.fyi</a></p>
     <p style="margin-top:16px"><a href="#" onclick="signOut();return false" style="font-size:12px;color:var(--text2)">Sign out</a></p>
   </div>`;
@@ -1514,8 +1514,32 @@ function switchTabUI(t){
 
 function hidePaywall(){
   document.querySelectorAll('.tab').forEach(t=>{
-    t.style.opacity='';t.style.pointerEvents='';
+    t.style.opacity='';t.style.pointerEvents='';t.style.cursor='';
   });
+}
+
+async function verifyAndUnlock(){
+  const dash=$('pane-dashboard');
+  if(dash) dash.innerHTML=`<div class="paywall-inner"><p style="color:var(--text2);font-size:13px">Checking your subscription...</p></div>`;
+  try{
+    const {data:s}=await sb.from('user_settings').select('subscription_status,trial_start').eq('user_id',currentUser.id).maybeSingle();
+    if(s&&s.subscription_status==='active'){
+      window._paywallActive=false;
+      window._accessGranted=true;
+      hidePaywall();
+      renderDash();
+    } else {
+      // Still not active — re-render paywall with message
+      if(dash) dash.innerHTML=paywallHTML();
+      const notice=document.createElement('p');
+      notice.style.cssText='font-size:12px;color:var(--red);margin-top:12px;text-align:center';
+      notice.textContent='Payment not confirmed yet. Please complete checkout first, then try again.';
+      if(dash) dash.appendChild(notice);
+    }
+  } catch(e){
+    console.error('Verify error:',e);
+    if(dash) dash.innerHTML=paywallHTML();
+  }
 }
 
 function showApp(user){
