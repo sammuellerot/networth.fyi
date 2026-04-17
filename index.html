@@ -1453,6 +1453,12 @@ function checkAccess(s){
   return {allowed:false,status:'expired',daysLeft:0};
 }
 
+function getLSCheckoutUrl(base){
+  if(!currentUser) return base;
+  const email=encodeURIComponent(currentUser.email);
+  return `${base}?checkout[email]=${email}&checkout[custom][user_email]=${email}`;
+}
+
 function paywallHTML(){
   const monthlyUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
   const lifetimeUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
