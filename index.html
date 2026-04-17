@@ -2229,6 +2229,13 @@ sb.auth.onAuthStateChange(async(event, session) => {
 });
 
 // onAuthStateChange handles all boot scenarios including INITIAL_SESSION
+// Fallback: check session directly in case onAuthStateChange doesn't fire on refresh
+setTimeout(async()=>{
+  if(!currentUser){
+    const {data:{session}}=await sb.auth.getSession();
+    if(session?.user) await bootUser(session.user);
+  }
+},500);
 
 function showResetPassword(){
   $('auth-overlay').style.display='flex';
