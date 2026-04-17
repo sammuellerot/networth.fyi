@@ -1907,8 +1907,16 @@ async function loadFromSupabase(){
   if(!currentUser) return;
   console.log('[LOAD START] user:', currentUser.email);
   setSyncBar('');
-  // Small delay to let Supabase session fully establish
-  await new Promise(r=>setTimeout(r,300));
+  // Refresh session to ensure valid token before querying
+  try{
+    const {data:{session},error}=await sb.auth.getSession();
+    if(error||!session) throw new Error('No valid session');
+    console.log('[LOAD] session valid, expires:', session.expires_at);
+  } catch(e){
+    console.error('[LOAD] session error:', e);
+    showAuth();
+    return;
+  }
   try{
     // Load accounts
     console.log('[LOAD] 1 querying accounts...');
