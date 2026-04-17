@@ -1524,6 +1524,7 @@ async function verifyAndUnlock(){
   try{
     const {data:s}=await sb.from('user_settings').select('subscription_status,trial_start').eq('user_id',currentUser.id).maybeSingle();
     if(s&&s.subscription_status==='active'){
+      sessionStorage.removeItem('nw_paywall');
       window._paywallActive=false;
       window._accessGranted=true;
       hidePaywall();
@@ -1622,15 +1623,15 @@ async function loadFromSupabase(){
     };
 
     // Check subscription access
-    console.log('DEBUG settings row:', JSON.stringify(s));
-    console.log('DEBUG trialStart:', trialStart);
     const access=checkAccess(s ? s : {trial_start:trialStart,subscription_status:'trialing'});
-    console.log('DEBUG access:', JSON.stringify(access));
     if(!access.allowed){
+      sessionStorage.setItem('nw_paywall','1');
       showPaywall();
       setSyncBar('');
       return;
     }
+    // Access granted — clear any paywall flag
+    sessionStorage.removeItem('nw_paywall');
     // Access granted
     window._accessGranted=true;
     $('app').style.display='block';
@@ -1811,13 +1812,17 @@ async function saveEditedEntry(){
 ───────────────────────────────────────── */
 async function bootUser(user){
   currentUser=user;
-  // Show app shell immediately — topbar, tabs visible
   $('auth-overlay').style.display='none';
-  $('app').style.display='block';
   $('user-email').textContent=user.email;
-
   window._accessGranted=false;
   window._paywallActive=false;
+
+  // Show paywall immediately on refresh if it was active before
+  if(sessionStorage.getItem('nw_paywall')){
+    $('app').style.display='block';
+    showPaywall();
+  }
+
   await loadFromSupabase();
   loadSettings();
 
