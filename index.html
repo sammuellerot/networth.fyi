@@ -74,7 +74,8 @@
   #sidebar-footer button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;font-size:12px;background:transparent;border:none;border-radius:7px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text2);transition:background .12s;}
   #sidebar-footer button:hover{background:var(--bg);color:var(--text);}
   /* ── Main content ── */
-  #main-content{margin-left:220px;flex:1;padding:28px 32px;max-width:900px;}
+  #main-content{margin-left:220px;flex:1;padding:28px 40px;min-width:0;}
+  #content-inner{max-width:860px;margin:0 auto;}
   #sync-bar{font-size:11px;color:var(--text2);text-align:right;margin-bottom:12px;min-height:14px;}
   /* ── Page header ── */
   .page-header{margin-bottom:24px;}
@@ -89,6 +90,7 @@
     #sidebar-logo,#sidebar-footer{display:none;}
     .tab{white-space:nowrap;padding:7px 10px;}
     #main-content{margin-left:0;padding:16px;}
+    #content-inner{max-width:100%;}
     #app{flex-direction:column;}
     .dash-top{grid-template-columns:1fr;}
     .dash-top .cards{flex-direction:row;flex-wrap:wrap;}
@@ -211,7 +213,6 @@ function forgotPassword(){
   <nav id="sidebar">
     <div id="sidebar-logo">
       <div class="logo-text">Networth.fyi</div>
-      <div class="logo-sub">Personal Finance</div>
     </div>
     <div id="sidebar-nav">
       <button class="tab active" onclick="switchTab('dashboard')">
@@ -240,11 +241,13 @@ function forgotPassword(){
 
   <div id="main-content">
     <div id="sync-bar"></div>
-    <div id="pane-dashboard"></div>
-    <div id="pane-enter"    style="display:none"></div>
-    <div id="pane-history"  style="display:none"></div>
-    <div id="pane-manage"   style="display:none"></div>
-    <div id="pane-settings" style="display:none"></div>
+    <div id="content-inner">
+      <div id="pane-dashboard"></div>
+      <div id="pane-enter"    style="display:none"></div>
+      <div id="pane-history"  style="display:none"></div>
+      <div id="pane-manage"   style="display:none"></div>
+      <div id="pane-settings" style="display:none"></div>
+    </div>
   </div>
 </div><!-- end #app -->
 
