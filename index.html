@@ -23,13 +23,11 @@
   .auth-field input:focus{border-color:#1D9E75;}
   .auth-err{font-size:12px;color:var(--red);margin-bottom:10px;min-height:16px;}
   .auth-ok{font-size:12px;color:var(--green);margin-bottom:10px;min-height:16px;}
-  /* ── Paywall overlay ── */
-  #paywall-overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
-  .paywall-box{width:100%;max-width:440px;text-align:center;}
-  .paywall-logo{font-size:20px;font-weight:700;margin-bottom:4px;}
+  /* ── Paywall (inline in dashboard) ── */
+  .paywall-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;}
   .paywall-title{font-size:22px;font-weight:600;margin-bottom:8px;}
-  .paywall-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
-  .plan-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+  .paywall-sub{font-size:14px;color:var(--text2);margin-bottom:32px;line-height:1.6;max-width:400px;}
+  .plan-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;width:100%;max-width:400px;}
   .plan-card{border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:center;cursor:pointer;text-decoration:none;display:block;transition:border-color .15s;}
   .plan-card:hover{border-color:#1D9E75;}
   .plan-card.featured{border:2px solid #1D9E75;}
@@ -37,7 +35,6 @@
   .plan-period{font-size:12px;color:var(--text2);margin-bottom:6px;}
   .plan-label{font-size:13px;font-weight:500;margin-bottom:4px;color:var(--text);}
   .plan-badge{font-size:10px;background:#1D9E75;color:#fff;border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:8px;}
-  .trial-badge{font-size:12px;color:var(--green);margin-top:8px;}
   /* ── Top bar when logged in ── */
   #topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
   #topbar .user-email{font-size:12px;color:var(--text2);}
@@ -184,31 +181,7 @@ function forgotPassword(){
   </div>
 </div>
 
-<!-- Paywall overlay — shown when trial expired -->
-<div id="paywall-overlay">
-  <div class="paywall-box">
-    <div class="paywall-logo">Networth.fyi</div>
-    <div class="paywall-title" id="paywall-title">Your free trial has ended</div>
-    <div class="paywall-sub" id="paywall-sub">Choose a plan to keep tracking your net worth. Your data is safe and waiting for you.</div>
-    <div class="plan-cards">
-      <a class="plan-card" id="monthly-plan" href="https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e" target="_blank">
-        <div class="plan-label">Monthly</div>
-        <div class="plan-price">$3</div>
-        <div class="plan-period">per month</div>
-      </a>
-      <a class="plan-card featured" id="lifetime-plan" href="https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" target="_blank">
-        <div class="plan-badge">Best value</div>
-        <div class="plan-label">Lifetime</div>
-        <div class="plan-price">$50</div>
-        <div class="plan-period">one time</div>
-      </a>
-    </div>
-    <p style="font-size:12px;color:var(--text2)">After purchasing, refresh this page to access your account.</p>
-    <p style="margin-top:12px"><a href="#" onclick="signOut();return false" style="font-size:12px;color:var(--text2)">Sign out</a></p>
-  </div>
-</div>
-
-<!-- Main app — hidden until logged in -->
+<!-- Main app — shown immediately, paywall renders inside pane-dashboard if needed -->
 <div id="app" style="display:none">
 <div id="topbar">
   <h1>Networth.fyi</h1>
@@ -1480,42 +1453,56 @@ function checkAccess(s){
   return {allowed:false,status:'expired',daysLeft:0};
 }
 
-function getLSCheckoutUrl(base){
-  if(!currentUser) return base;
-  const email=encodeURIComponent(currentUser.email);
-  return `${base}?checkout[email]=${email}&checkout[custom][user_email]=${email}`;
+function paywallHTML(){
+  const monthlyUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
+  const lifetimeUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
+  return `<div class="paywall-inner">
+    <div class="paywall-title">Your free trial has ended</div>
+    <p class="paywall-sub">Choose a plan to keep tracking your net worth.<br>Your data is safe and waiting for you.</p>
+    <div class="plan-cards">
+      <a class="plan-card" href="${monthlyUrl}" target="_blank">
+        <div class="plan-label">Monthly</div>
+        <div class="plan-price">$3</div>
+        <div class="plan-period">per month</div>
+      </a>
+      <a class="plan-card featured" href="${lifetimeUrl}" target="_blank">
+        <div class="plan-badge">Best value</div>
+        <div class="plan-label">Lifetime</div>
+        <div class="plan-price">$50</div>
+        <div class="plan-period">one time</div>
+      </a>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-top:4px">After purchasing, refresh this page to continue.</p>
+  </div>`;
 }
 
-function showPaywall(daysLeft){
-  const overlay=$('paywall-overlay');
-  const title=$('paywall-title');
-  const sub=$('paywall-sub');
-  if(daysLeft===0){
-    title.textContent='Your free trial has ended';
-    sub.textContent='Choose a plan to keep tracking your net worth. Your data is safe and waiting for you.';
-  }
-  // Update checkout URLs with user email
-  const monthly=$('monthly-plan');
-  const lifetime=$('lifetime-plan');
-  if(monthly) monthly.href=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
-  if(lifetime) lifetime.href=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
-  overlay.style.display='flex';
-  // Hard block — hide app and disable pointer events on anything behind
-  $('app').style.display='none';
-  $('app').style.pointerEvents='none';
-  document.body.style.overflow='hidden';
+function showPaywall(){
+  // Disable all tabs except dashboard
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    if(i>0){t.style.opacity='0.3';t.style.pointerEvents='none';}
+  });
+  // Render paywall inside dashboard pane
+  const dash=$('pane-dashboard');
+  if(dash) dash.innerHTML=paywallHTML();
+  // Make sure dashboard tab is active
+  switchTabUI('dashboard');
+}
+
+function switchTabUI(t){
+  const TABS=['dashboard','enter','history','manage','settings'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',TABS[i]===t));
+  TABS.forEach(name=>$('pane-'+name).style.display=name===t?'block':'none');
 }
 
 function hidePaywall(){
-  $('paywall-overlay').style.display='none';
-  $('app').style.pointerEvents='';
-  document.body.style.overflow='';
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.style.opacity='';t.style.pointerEvents='';
+  });
 }
 
 function showApp(user){
   currentUser=user;
   $('auth-overlay').style.display='none';
-  hidePaywall();
   $('app').style.display='block';
   $('user-email').textContent=user.email;
 }
@@ -1595,12 +1582,12 @@ async function loadFromSupabase(){
     // Check subscription access
     const access=checkAccess(s ? s : {trial_start:trialStart,subscription_status:'trialing'});
     if(!access.allowed){
-      showPaywall(access.daysLeft);
+      showPaywall();
       setSyncBar('');
       return;
     }
-    // Access granted — show the app now
-    $('app').style.display='block';
+    // Access granted — app is already visible, just clear any pointerEvents block
+    hidePaywall();
     // Show trial countdown in topbar
     if(access.status==='trialing'&&access.daysLeft!==null){
       const bar=$('sync-bar');
@@ -1778,24 +1765,20 @@ async function saveEditedEntry(){
 ───────────────────────────────────────── */
 async function bootUser(user){
   currentUser=user;
+  // Show app shell immediately — topbar, tabs visible
   $('auth-overlay').style.display='none';
+  $('app').style.display='block';
   $('user-email').textContent=user.email;
-  // Show loading screen while access check runs
-  document.body.style.background='var(--bg)';
-  const loading=document.createElement('div');
-  loading.id='boot-loading';
-  loading.style.cssText='position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text2);';
-  loading.textContent='Loading...';
-  document.body.appendChild(loading);
+
+  // Show skeleton in dashboard while loading
+  const dash=$('pane-dashboard');
+  if(dash) dash.innerHTML=`<div style="padding:40px 0;text-align:center;color:var(--text2);font-size:13px">Loading your data...</div>`;
 
   await loadFromSupabase();
   loadSettings();
 
-  // Remove loading screen
-  const l=document.getElementById('boot-loading');
-  if(l) l.remove();
-
-  if($('app').style.display!=='none'){
+  // Render dashboard if access was granted (paywall replaces content if not)
+  if(!$('pane-dashboard').querySelector('.paywall-inner')){
     renderDash();
   }
 }
