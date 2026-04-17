@@ -1988,9 +1988,12 @@ document.addEventListener('visibilitychange',async()=>{
   }
 });
 
+let _recoverySession = null;
+
 // Listen for password recovery event
 sb.auth.onAuthStateChange((event, session) => {
   if(event === 'PASSWORD_RECOVERY'){
+    _recoverySession = session;
     showResetPassword();
   }
 });
@@ -2037,14 +2040,13 @@ async function submitReset(){
   if(pw.length<6){if(err)err.textContent='Password must be at least 6 characters.';return;}
   if(pw!==pw2){if(err)err.textContent='Passwords do not match.';return;}
   try{
-    // Wait up to 3 seconds for Supabase to establish session from the hash token
-    let session=null;
-    for(let i=0;i<6;i++){
-      const {data}=await sb.auth.getSession();
-      if(data?.session){session=data.session;break;}
-      await new Promise(r=>setTimeout(r,500));
+    // Use stored recovery session or get current session
+    if(_recoverySession){
+      await sb.auth.setSession({
+        access_token: _recoverySession.access_token,
+        refresh_token: _recoverySession.refresh_token
+      });
     }
-    if(!session) throw new Error('Session not established. Please request a new reset link.');
     const {error}=await sb.auth.updateUser({password:pw});
     if(error) throw error;
     if(ok) ok.textContent='Password updated! Signing you in...';
@@ -2052,6 +2054,7 @@ async function submitReset(){
       const {data:{session}}=await sb.auth.getSession();
       if(session&&session.user){
         window.location.hash='';
+        _recoverySession=null;
         await bootUser(session.user);
       }
     },1200);
