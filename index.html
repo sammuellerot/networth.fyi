@@ -1930,12 +1930,70 @@ document.addEventListener('visibilitychange',async()=>{
 
 // Single boot on page load
 (async()=>{
+  // Check for password recovery flow in URL hash
+  const hash = window.location.hash;
+  if(hash.includes('type=recovery')){
+    showResetPassword();
+    return;
+  }
+
   const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
+    // Also check if this is a recovery session
+    if(session.user.recovery_sent_at || hash.includes('access_token')){
+      // Check if it's actually a recovery token
+      const params = new URLSearchParams(hash.replace('#','?'));
+      if(params.get('type')==='recovery'){
+        showResetPassword();
+        return;
+      }
+    }
     await bootUser(session.user);
   }
   // No session — auth overlay already visible
 })();
+
+function showResetPassword(){
+  $('auth-overlay').style.display='flex';
+  $('app').style.display='none';
+  const box = document.querySelector('.auth-box');
+  if(box){
+    box.innerHTML=`
+      <div class="auth-logo">Networth.fyi</div>
+      <div class="auth-sub">Set a new password for your account.</div>
+      <div class="auth-field"><label>New password</label><input type="password" id="reset-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitReset()"/></div>
+      <div class="auth-field"><label>Confirm password</label><input type="password" id="reset-pw2" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitReset()"/></div>
+      <div class="auth-err" id="auth-err"></div>
+      <div class="auth-ok" id="auth-ok"></div>
+      <button class="primary" style="width:100%;padding:10px;font-size:14px" onclick="submitReset()">Set new password</button>
+    `;
+  }
+}
+
+async function submitReset(){
+  const pw = ($('reset-pw')?.value||'').trim();
+  const pw2 = ($('reset-pw2')?.value||'').trim();
+  const err = $('auth-err'), ok = $('auth-ok');
+  if(err) err.textContent='';
+  if(ok) ok.textContent='';
+  if(!pw){if(err)err.textContent='Please enter a new password.';return;}
+  if(pw.length<6){if(err)err.textContent='Password must be at least 6 characters.';return;}
+  if(pw!==pw2){if(err)err.textContent='Passwords do not match.';return;}
+  try{
+    const {error}=await sb.auth.updateUser({password:pw});
+    if(error) throw error;
+    if(ok) ok.textContent='Password updated! Signing you in...';
+    setTimeout(async()=>{
+      const {data:{session}}=await sb.auth.getSession();
+      if(session&&session.user){
+        window.location.hash='';
+        await bootUser(session.user);
+      }
+    },1200);
+  } catch(e){
+    if(err) err.textContent=e.message||'Something went wrong.';
+  }
+}
 </script>
 </body>
 </html>
