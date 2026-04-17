@@ -2003,6 +2003,7 @@ sb.auth.onAuthStateChange(async(event, session) => {
     entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
     window._accessGranted=false;
     sessionStorage.removeItem('nw_paywall');
+    window.location.hash='';
     showAuth();
   }
 });
