@@ -1826,14 +1826,6 @@ async function bootUser(user){
   window._accessGranted=false;
   window._paywallActive=false;
 
-  // Show paywall immediately if flag set — avoids flash of app content
-  // Supabase check below will override this either way
-  if(sessionStorage.getItem('nw_paywall')){
-    $('app').style.display='block';
-    showPaywall();
-  }
-
-  // Always re-verify with Supabase — this is the source of truth
   await loadFromSupabase();
   loadSettings();
 
