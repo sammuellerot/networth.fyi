@@ -24,7 +24,7 @@
   .auth-err{font-size:12px;color:var(--red);margin-bottom:10px;min-height:16px;}
   .auth-ok{font-size:12px;color:var(--green);margin-bottom:10px;min-height:16px;}
   /* ── Paywall (inline in dashboard) ── */
-  .paywall-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;}
+  .paywall-inner{max-width:420px;margin:40px auto;text-align:center;padding:0 16px;}
   .paywall-title{font-size:22px;font-weight:600;margin-bottom:8px;}
   .paywall-sub{font-size:14px;color:var(--text2);margin-bottom:32px;line-height:1.6;max-width:400px;}
   .plan-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;width:100%;max-width:400px;}
@@ -1464,22 +1464,27 @@ function paywallHTML(){
   const monthlyUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
   const lifetimeUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
   return `<div class="paywall-inner">
-    <div class="paywall-title">Your free trial has ended</div>
-    <p class="paywall-sub">Choose a plan to keep tracking your net worth.<br>Your data is safe and waiting for you.</p>
+    <div style="font-size:32px;margin-bottom:12px">🔒</div>
+    <div class="paywall-title">Your 14-day free trial has ended</div>
+    <p class="paywall-sub">Your accounts and all your history are safe — nothing has been deleted.<br>Unlock full access by choosing a plan below.</p>
     <div class="plan-cards">
       <a class="plan-card" href="${monthlyUrl}" target="_blank">
         <div class="plan-label">Monthly</div>
         <div class="plan-price">$3</div>
         <div class="plan-period">per month</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:8px">Cancel anytime</div>
       </a>
       <a class="plan-card featured" href="${lifetimeUrl}" target="_blank">
         <div class="plan-badge">Best value</div>
         <div class="plan-label">Lifetime</div>
         <div class="plan-price">$50</div>
-        <div class="plan-period">one time</div>
+        <div class="plan-period">one-time payment</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:8px">Pay once, use forever</div>
       </a>
     </div>
-    <p style="font-size:12px;color:var(--text2);margin-top:4px">After purchasing, refresh this page to continue.</p>
+    <p style="font-size:12px;color:var(--text2);margin-top:4px">Click a plan above to open the checkout page.<br>Already purchased? <a href="#" onclick="location.reload();return false" style="color:var(--green);text-decoration:underline">Click here to refresh and unlock</a></p>
+    <p style="font-size:12px;color:var(--text2);margin-top:12px">Questions? <a href="mailto:hello@networth.fyi" style="color:var(--text2);text-decoration:underline">hello@networth.fyi</a></p>
+    <p style="margin-top:16px"><a href="#" onclick="signOut();return false" style="font-size:12px;color:var(--text2)">Sign out</a></p>
   </div>`;
 }
 
@@ -1601,7 +1606,8 @@ async function loadFromSupabase(){
       setSyncBar('');
       return;
     }
-    // Access granted — app is already visible, just clear any pointerEvents block
+    // Access granted
+    window._accessGranted=true;
     hidePaywall();
     // Show trial countdown in topbar
     if(access.status==='trialing'&&access.daysLeft!==null){
@@ -1785,15 +1791,17 @@ async function bootUser(user){
   $('app').style.display='block';
   $('user-email').textContent=user.email;
 
-  // Show skeleton in dashboard while loading
+  // Show skeleton while loading
+  $('app').style.display='block';
   const dash=$('pane-dashboard');
-  if(dash) dash.innerHTML=`<div style="padding:40px 0;text-align:center;color:var(--text2);font-size:13px">Loading your data...</div>`;
+  if(dash) dash.innerHTML=`<div style="padding:40px 0;text-align:center;color:var(--text2);font-size:13px">Loading...</div>`;
 
+  window._accessGranted=false;
+  window._paywallActive=false;
   await loadFromSupabase();
   loadSettings();
 
-  // Render dashboard if access was granted (paywall replaces content if not)
-  if(!$('pane-dashboard').querySelector('.paywall-inner')){
+  if(window._accessGranted){
     renderDash();
   }
 }
