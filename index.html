@@ -1988,22 +1988,31 @@ document.addEventListener('visibilitychange',async()=>{
   }
 });
 
-// Listen for password recovery event from Supabase
+// Listen for password recovery event
 sb.auth.onAuthStateChange((event, session) => {
   if(event === 'PASSWORD_RECOVERY'){
     showResetPassword();
-  } else if(event === 'SIGNED_IN' && !currentUser){
-    // Normal sign in handled by getSession below
   }
 });
 
 // Single boot on page load
 (async()=>{
+  // Check hash directly as a fallback
+  const hash = window.location.hash;
+  if(hash.includes('type=recovery')){
+    // Wait briefly for Supabase to process the hash and establish session
+    await new Promise(r=>setTimeout(r,500));
+    const {data:{session}}=await sb.auth.getSession();
+    if(session){
+      showResetPassword();
+      return;
+    }
+  }
+
   const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
     await bootUser(session.user);
   }
-  // No session — auth overlay already visible
 })();
 
 function showResetPassword(){
