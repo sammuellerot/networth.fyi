@@ -23,6 +23,21 @@
   .auth-field input:focus{border-color:#1D9E75;}
   .auth-err{font-size:12px;color:var(--red);margin-bottom:10px;min-height:16px;}
   .auth-ok{font-size:12px;color:var(--green);margin-bottom:10px;min-height:16px;}
+  /* ── Paywall overlay ── */
+  #paywall-overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
+  .paywall-box{width:100%;max-width:440px;text-align:center;}
+  .paywall-logo{font-size:20px;font-weight:700;margin-bottom:4px;}
+  .paywall-title{font-size:22px;font-weight:600;margin-bottom:8px;}
+  .paywall-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
+  .plan-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+  .plan-card{border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:center;cursor:pointer;text-decoration:none;display:block;transition:border-color .15s;}
+  .plan-card:hover{border-color:#1D9E75;}
+  .plan-card.featured{border:2px solid #1D9E75;}
+  .plan-price{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--text);}
+  .plan-period{font-size:12px;color:var(--text2);margin-bottom:6px;}
+  .plan-label{font-size:13px;font-weight:500;margin-bottom:4px;color:var(--text);}
+  .plan-badge{font-size:10px;background:#1D9E75;color:#fff;border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:8px;}
+  .trial-badge{font-size:12px;color:var(--green);margin-top:8px;}
   /* ── Top bar when logged in ── */
   #topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
   #topbar .user-email{font-size:12px;color:var(--text2);}
@@ -166,6 +181,30 @@ function forgotPassword(){
     <p style="font-size:11px;color:var(--text2);margin-top:14px;text-align:center">
       <span id="auth-forgot-wrap"><a href="#" onclick="forgotPassword();return false" style="color:var(--text2)">Forgot password?</a></span>
     </p>
+  </div>
+</div>
+
+<!-- Paywall overlay — shown when trial expired -->
+<div id="paywall-overlay">
+  <div class="paywall-box">
+    <div class="paywall-logo">Networth.fyi</div>
+    <div class="paywall-title" id="paywall-title">Your free trial has ended</div>
+    <div class="paywall-sub" id="paywall-sub">Choose a plan to keep tracking your net worth. Your data is safe and waiting for you.</div>
+    <div class="plan-cards">
+      <a class="plan-card" id="monthly-plan" href="https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e" target="_blank">
+        <div class="plan-label">Monthly</div>
+        <div class="plan-price">$3</div>
+        <div class="plan-period">per month</div>
+      </a>
+      <a class="plan-card featured" id="lifetime-plan" href="https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" target="_blank">
+        <div class="plan-badge">Best value</div>
+        <div class="plan-label">Lifetime</div>
+        <div class="plan-price">$50</div>
+        <div class="plan-period">one time</div>
+      </a>
+    </div>
+    <p style="font-size:12px;color:var(--text2)">After purchasing, refresh this page to access your account.</p>
+    <p style="margin-top:12px"><a href="#" onclick="signOut();return false" style="font-size:12px;color:var(--text2)">Sign out</a></p>
   </div>
 </div>
 
@@ -1420,9 +1459,58 @@ function showAuth(){
   $('app').style.display='none';
 }
 
+const TRIAL_DAYS=14;
+const LS_MONTHLY_VARIANT='1540147';
+const LS_LIFETIME_VARIANT='1540148';
+
+function getTrialDaysLeft(trialStart){
+  if(!trialStart) return TRIAL_DAYS;
+  const start=new Date(trialStart);
+  const now=new Date();
+  const elapsed=(now-start)/(1000*60*60*24);
+  return Math.max(0,Math.ceil(TRIAL_DAYS-elapsed));
+}
+
+function checkAccess(s){
+  if(!s) return {allowed:true,status:'trialing',daysLeft:TRIAL_DAYS};
+  const status=s.subscription_status||'trialing';
+  if(status==='active') return {allowed:true,status:'active',daysLeft:null};
+  const daysLeft=getTrialDaysLeft(s.trial_start);
+  if(daysLeft>0) return {allowed:true,status:'trialing',daysLeft};
+  return {allowed:false,status:'expired',daysLeft:0};
+}
+
+function getLSCheckoutUrl(base){
+  if(!currentUser) return base;
+  const email=encodeURIComponent(currentUser.email);
+  return `${base}?checkout[email]=${email}&checkout[custom][user_email]=${email}`;
+}
+
+function showPaywall(daysLeft){
+  const overlay=$('paywall-overlay');
+  const title=$('paywall-title');
+  const sub=$('paywall-sub');
+  if(daysLeft===0){
+    title.textContent='Your free trial has ended';
+    sub.textContent='Choose a plan to keep tracking your net worth. Your data is safe and waiting for you.';
+  }
+  // Update checkout URLs with user email
+  const monthly=$('monthly-plan');
+  const lifetime=$('lifetime-plan');
+  if(monthly) monthly.href=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
+  if(lifetime) lifetime.href=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
+  overlay.style.display='flex';
+  $('app').style.display='none';
+}
+
+function hidePaywall(){
+  $('paywall-overlay').style.display='none';
+}
+
 function showApp(user){
   currentUser=user;
   $('auth-overlay').style.display='none';
+  hidePaywall();
   $('app').style.display='block';
   $('user-email').textContent=user.email;
 }
@@ -1483,6 +1571,30 @@ async function loadFromSupabase(){
         currentAge:s.current_age||'',
         goalAmount:s.goal_amount||''
       };
+      // Check subscription access
+      const access=checkAccess(s);
+      if(!access.allowed){
+        showPaywall(access.daysLeft);
+        setSyncBar('');
+        return;
+      }
+      // Show trial countdown in topbar
+      if(access.status==='trialing'&&access.daysLeft!==null){
+        const bar=$('sync-bar');
+        if(bar){
+          bar.innerHTML=`<span style="color:var(--amber)">Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} left — <a href="https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" target="_blank" style="color:var(--amber);text-decoration:underline">Upgrade</a></span>`;
+        }
+      }
+    } else {
+      // First time — create settings row with trial start
+      await sb.from('user_settings').upsert({
+        user_id:currentUser.id,
+        trial_start:new Date().toISOString(),
+        subscription_status:'trialing',
+        forecast_years:3,
+        lookback_months:12,
+        updated_at:new Date().toISOString()
+      },{onConflict:'user_id'});
     }
 
     setSyncBar('');
