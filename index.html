@@ -1563,38 +1563,43 @@ async function loadFromSupabase(){
       return {date:e.entry_date,values,_id:e.id};
     });
 
-    // Map settings
-    if(s){
-      settings={
-        forecastYears:s.forecast_years||3,
-        lookbackMonths:s.lookback_months||12,
-        currentAge:s.current_age||'',
-        goalAmount:s.goal_amount||''
-      };
-      // Check subscription access
-      const access=checkAccess(s);
-      if(!access.allowed){
-        showPaywall(access.daysLeft);
-        setSyncBar('');
-        return;
-      }
-      // Show trial countdown in topbar
-      if(access.status==='trialing'&&access.daysLeft!==null){
-        const bar=$('sync-bar');
-        if(bar){
-          bar.innerHTML=`<span style="color:var(--amber)">Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} left — <a href="https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" target="_blank" style="color:var(--amber);text-decoration:underline">Upgrade</a></span>`;
-        }
-      }
-    } else {
-      // First time — create settings row with trial start
+    // Always upsert settings on login to ensure row exists
+    const trialStart = s?.trial_start || new Date().toISOString();
+    const subStatus = s?.subscription_status || 'trialing';
+
+    if(!s){
+      // First login — create settings row
       await sb.from('user_settings').upsert({
         user_id:currentUser.id,
-        trial_start:new Date().toISOString(),
+        trial_start:trialStart,
         subscription_status:'trialing',
         forecast_years:3,
         lookback_months:12,
         updated_at:new Date().toISOString()
       },{onConflict:'user_id'});
+    }
+
+    // Map settings
+    settings={
+      forecastYears:s?.forecast_years||3,
+      lookbackMonths:s?.lookback_months||12,
+      currentAge:s?.current_age||'',
+      goalAmount:s?.goal_amount||''
+    };
+
+    // Check subscription access
+    const access=checkAccess(s ? s : {trial_start:trialStart,subscription_status:'trialing'});
+    if(!access.allowed){
+      showPaywall(access.daysLeft);
+      setSyncBar('');
+      return;
+    }
+    // Show trial countdown in topbar
+    if(access.status==='trialing'&&access.daysLeft!==null){
+      const bar=$('sync-bar');
+      if(bar){
+        bar.innerHTML=`<span style="color:var(--amber)">Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} left — <a href="https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" target="_blank" style="color:var(--amber);text-decoration:underline">Upgrade</a></span>`;
+      }
     }
 
     setSyncBar('');
