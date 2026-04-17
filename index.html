@@ -1464,11 +1464,7 @@ async function forgotPassword(){
 }
 
 async function signOut(){
-  _booting=false;
   await sb.auth.signOut();
-  currentUser=null;
-  entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
-  showAuth();
 }
 
 function showAuth(){
@@ -1688,7 +1684,6 @@ async function loadFromSupabase(){
 
     // Check subscription access
     const access=checkAccess(s ? s : {trial_start:trialStart,subscription_status:'trialing'});
-    console.log('[ACCESS CHECK]', JSON.stringify({s_trial:s?.trial_start, s_status:s?.subscription_status, access}));
     if(!access.allowed){
       sessionStorage.setItem('nw_paywall','1');
       showPaywall();
@@ -1880,10 +1875,7 @@ async function saveEditedEntry(){
 /* ─────────────────────────────────────────
    Boot
 ───────────────────────────────────────── */
-let _booting=false;
 async function bootUser(user){
-  if(_booting) return;
-  _booting=true;
   currentUser=user;
   $('auth-overlay').style.display='none';
   $('user-email').textContent=user.email;
@@ -1897,47 +1889,47 @@ async function bootUser(user){
   await loadFromSupabase();
   loadSettings();
 
-  console.log('[BOOTUSER END] _accessGranted=', window._accessGranted);
   if(window._accessGranted){
     hidePaywall();
     renderDash();
   }
-  _booting=false;
 }
 
-// Listen for auth state changes
+// Only handle sign-in and sign-out events — not initial page load
 sb.auth.onAuthStateChange(async(event,session)=>{
-  if(session&&session.user){
+  if(event==='SIGNED_IN'){
     await bootUser(session.user);
-  } else {
+  } else if(event==='SIGNED_OUT'){
+    currentUser=null;
+    entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
     showAuth();
   }
 });
 
-// Re-check access when user returns to the tab (e.g. after visiting checkout)
+// Re-check access when user returns to the tab
 document.addEventListener('visibilitychange',async()=>{
   if(document.visibilityState==='visible'&&currentUser&&!window._paywallActive){
-    // Re-fetch subscription status silently
     const {data:s}=await sb.from('user_settings').select('subscription_status,trial_start').eq('user_id',currentUser.id).maybeSingle();
     if(s){
       const access=checkAccess(s);
       if(!access.allowed){
-        window._paywallActive=false; // reset so showPaywall can re-apply
+        window._paywallActive=false;
         showPaywall();
       } else if(access.status==='active'&&window._paywallActive){
-        // They just paid — let them in
         window._paywallActive=false;
         location.reload();
       }
     }
   }
 });
+
+// Initial page load — check for existing session
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
     await bootUser(session.user);
   }
-  // If no session, auth overlay is already visible
+  // No session — auth overlay already visible
 })();
 </script>
 </body>
