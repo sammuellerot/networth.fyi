@@ -1907,16 +1907,6 @@ async function loadFromSupabase(){
   if(!currentUser) return;
   console.log('[LOAD START] user:', currentUser.email);
   setSyncBar('');
-  // Refresh session to ensure valid token before querying
-  try{
-    const {data:{session},error}=await sb.auth.getSession();
-    if(error||!session) throw new Error('No valid session');
-    console.log('[LOAD] session valid, expires:', session.expires_at);
-  } catch(e){
-    console.error('[LOAD] session error:', e);
-    showAuth();
-    return;
-  }
   try{
     // Load accounts
     console.log('[LOAD] 1 querying accounts...');
@@ -2233,8 +2223,6 @@ sb.auth.onAuthStateChange(async(event, session) => {
   if(event === 'PASSWORD_RECOVERY'){
     _recoverySession = session;
     showResetPassword();
-  } else if((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && !_recoverySession && !currentUser){
-    if(session?.user) await bootUser(session.user);
   } else if(event === 'SIGNED_OUT' && window._explicitSignOut){
     _recoverySession=null;
     currentUser=null;
@@ -2247,14 +2235,15 @@ sb.auth.onAuthStateChange(async(event, session) => {
   }
 });
 
-// onAuthStateChange handles all boot scenarios including INITIAL_SESSION
-// Fallback: check session directly in case onAuthStateChange doesn't fire on refresh
-setTimeout(async()=>{
-  if(!currentUser){
-    const {data:{session}}=await sb.auth.getSession();
-    if(session?.user) await bootUser(session.user);
+// Boot on page load — wait for Supabase to be fully ready
+window.addEventListener('load', async()=>{
+  await new Promise(r=>setTimeout(r,100));
+  const {data:{session}}=await sb.auth.getSession();
+  console.log('[BOOT] getSession result:', session?.user?.email);
+  if(session?.user){
+    await bootUser(session.user);
   }
-},500);
+});
 
 function showResetPassword(){
   $('auth-overlay').style.display='flex';
