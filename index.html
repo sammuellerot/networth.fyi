@@ -2083,6 +2083,7 @@ function persist(){
   try{localStorage.setItem('nw_entries',JSON.stringify(entries));}catch(e){}
 }
 function persistAccounts(){
+  if(accounts.length===0) console.trace('persistAccounts called with empty accounts!');
   try{localStorage.setItem('nw_accounts',JSON.stringify(accounts));}catch(e){}
   if(currentUser && window._accessGranted) saveAccountsToSupabase();
 }
