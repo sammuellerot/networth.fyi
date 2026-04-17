@@ -1990,24 +1990,28 @@ document.addEventListener('visibilitychange',async()=>{
 
 // Single boot on page load
 (async()=>{
-  // Check for password recovery flow in URL hash
   const hash = window.location.hash;
-  if(hash.includes('type=recovery')){
-    showResetPassword();
+  const params = new URLSearchParams(hash.replace('#','?'));
+
+  // Handle password recovery token in URL
+  if(params.get('type')==='recovery' && params.get('access_token')){
+    try{
+      // Exchange the token for a session so updateUser works
+      const {data,error} = await sb.auth.setSession({
+        access_token: params.get('access_token'),
+        refresh_token: params.get('refresh_token')||''
+      });
+      if(error) throw error;
+      showResetPassword();
+    } catch(e){
+      console.error('Recovery token error:',e);
+      showResetPassword(); // Show form anyway, error will appear on submit
+    }
     return;
   }
 
   const {data:{session}}=await sb.auth.getSession();
   if(session&&session.user){
-    // Also check if this is a recovery session
-    if(session.user.recovery_sent_at || hash.includes('access_token')){
-      // Check if it's actually a recovery token
-      const params = new URLSearchParams(hash.replace('#','?'));
-      if(params.get('type')==='recovery'){
-        showResetPassword();
-        return;
-      }
-    }
     await bootUser(session.user);
   }
   // No session — auth overlay already visible
