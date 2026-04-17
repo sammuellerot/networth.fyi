@@ -1479,7 +1479,13 @@ async function deleteAccount(){
 ───────────────────────────────────────── */
 const SUPA_URL='https://riynauzutjgxevipdlfx.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeW5hdXp1dGpneGV2aXBkbGZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNTMxMjQsImV4cCI6MjA5MTkyOTEyNH0.3WQDaZrBsvSWA6_OHjHOqU1vSKxG0dwkGw2ClabKnXY';
-const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY,{
+  auth:{
+    detectSessionInUrl:true,
+    persistSession:true,
+    autoRefreshToken:true
+  }
+});
 
 let currentUser=null;
 // authTab declared in inline script above
@@ -1529,13 +1535,8 @@ async function forgotPassword(){
 }
 
 async function signOut(){
+  sessionStorage.clear();
   await sb.auth.signOut();
-  currentUser=null;
-  entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
-  window._accessGranted=false;
-  window._paywallActive=false;
-  sessionStorage.removeItem('nw_paywall');
-  showAuth();
 }
 
 function showAuth(){
@@ -1990,25 +1991,25 @@ document.addEventListener('visibilitychange',async()=>{
 
 let _recoverySession = null;
 
-// Listen for password recovery event
-sb.auth.onAuthStateChange((event, session) => {
+sb.auth.onAuthStateChange(async(event, session) => {
   if(event === 'PASSWORD_RECOVERY'){
     _recoverySession = session;
     showResetPassword();
+  } else if(event === 'SIGNED_IN' && !_recoverySession && !currentUser){
+    await bootUser(session.user);
+  } else if(event === 'SIGNED_OUT'){
+    currentUser=null;
+    entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
+    window._accessGranted=false;
+    sessionStorage.removeItem('nw_paywall');
+    showAuth();
   }
 });
 
-// Single boot on page load
+// Initial session check
 (async()=>{
-  // Check hash directly — show reset form immediately if recovery token present
-  const hash = window.location.hash;
-  if(hash.includes('type=recovery')){
-    showResetPassword();
-    return;
-  }
-
   const {data:{session}}=await sb.auth.getSession();
-  if(session&&session.user){
+  if(session&&session.user&&!currentUser){
     await bootUser(session.user);
   }
 })();
@@ -2031,35 +2032,25 @@ function showResetPassword(){
 }
 
 async function submitReset(){
-  const pw = ($('reset-pw')?.value||'').trim();
-  const pw2 = ($('reset-pw2')?.value||'').trim();
-  const err = $('auth-err'), ok = $('auth-ok');
-  if(err) err.textContent='';
-  if(ok) ok.textContent='';
+  const pw=($('reset-pw')?.value||'').trim();
+  const pw2=($('reset-pw2')?.value||'').trim();
+  const err=$('auth-err'),ok=$('auth-ok');
+  if(err)err.textContent='';if(ok)ok.textContent='';
   if(!pw){if(err)err.textContent='Please enter a new password.';return;}
   if(pw.length<6){if(err)err.textContent='Password must be at least 6 characters.';return;}
   if(pw!==pw2){if(err)err.textContent='Passwords do not match.';return;}
   try{
-    // Use stored recovery session or get current session
-    if(_recoverySession){
-      await sb.auth.setSession({
-        access_token: _recoverySession.access_token,
-        refresh_token: _recoverySession.refresh_token
-      });
-    }
     const {error}=await sb.auth.updateUser({password:pw});
     if(error) throw error;
-    if(ok) ok.textContent='Password updated! Signing you in...';
+    if(ok)ok.textContent='Password updated! Signing you in...';
+    _recoverySession=null;
+    window.location.hash='';
     setTimeout(async()=>{
       const {data:{session}}=await sb.auth.getSession();
-      if(session&&session.user){
-        window.location.hash='';
-        _recoverySession=null;
-        await bootUser(session.user);
-      }
+      if(session?.user) await bootUser(session.user);
     },1200);
   } catch(e){
-    if(err) err.textContent=e.message||'Something went wrong.';
+    if(err)err.textContent=e.message||'Something went wrong.';
   }
 }
 </script>
