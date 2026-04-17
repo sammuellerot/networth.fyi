@@ -1474,6 +1474,19 @@ async function signOut(){
 function showAuth(){
   $('auth-overlay').style.display='flex';
   $('app').style.display='none';
+  // Clear credentials for security
+  const email=$('auth-email'), pw=$('auth-password');
+  if(email) email.value='';
+  if(pw) pw.value='';
+  // Reset button
+  const btn=$('auth-btn');
+  if(btn){btn.textContent='Sign in';btn.disabled=false;}
+  // Clear messages
+  const err=$('auth-err'),ok=$('auth-ok');
+  if(err) err.textContent='';
+  if(ok) ok.textContent='';
+  // Reset to sign in tab
+  setAuthTab('login');
 }
 
 const TRIAL_DAYS=14;
