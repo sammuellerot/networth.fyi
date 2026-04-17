@@ -1996,8 +1996,8 @@ sb.auth.onAuthStateChange(async(event, session) => {
   if(event === 'PASSWORD_RECOVERY'){
     _recoverySession = session;
     showResetPassword();
-  } else if(event === 'SIGNED_IN' && !_recoverySession && !currentUser){
-    await bootUser(session.user);
+  } else if((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && !_recoverySession && !currentUser){
+    if(session?.user) await bootUser(session.user);
   } else if(event === 'SIGNED_OUT'){
     currentUser=null;
     entries=[];accounts=[];settings={...DEFAULT_SETTINGS};
@@ -2007,13 +2007,7 @@ sb.auth.onAuthStateChange(async(event, session) => {
   }
 });
 
-// Initial session check
-(async()=>{
-  const {data:{session}}=await sb.auth.getSession();
-  if(session&&session.user&&!currentUser){
-    await bootUser(session.user);
-  }
-})();
+// onAuthStateChange handles all boot scenarios including INITIAL_SESSION
 
 function showResetPassword(){
   $('auth-overlay').style.display='flex';
