@@ -1641,6 +1641,8 @@ async function loadFromSupabase(){
     // Access granted — always clear paywall flag
     sessionStorage.removeItem('nw_paywall');
     window._paywallActive=false;
+    window._accessGranted=true;
+    $('app').style.display='block';
     // Access granted
     window._accessGranted=true;
     $('app').style.display='block';
