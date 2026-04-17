@@ -1490,13 +1490,11 @@ function paywallHTML(){
 
 function showPaywall(){
   $('app').style.display='block';
-  // Disable ALL tabs — no navigation allowed
   document.querySelectorAll('.tab').forEach(t=>{
     t.style.opacity='0.3';
     t.style.pointerEvents='none';
     t.style.cursor='default';
   });
-  // Force dashboard pane visible with paywall content
   const TABS=['dashboard','enter','history','manage','settings'];
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',TABS[i]==='dashboard'));
   TABS.forEach(name=>{
@@ -1608,6 +1606,7 @@ async function loadFromSupabase(){
     }
     // Access granted
     window._accessGranted=true;
+    $('app').style.display='block';
     hidePaywall();
     // Show trial countdown in topbar
     if(access.status==='trialing'&&access.daysLeft!==null){
@@ -1620,10 +1619,9 @@ async function loadFromSupabase(){
     setSyncBar('');
   } catch(e){
     console.error('Load error:',e);
-    setSyncBar('Error loading data','var(--red)');
-    // Fall back to defaults so app is usable
-    accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
-    entries=[];
+    // On any error, show paywall to be safe — don't let users in on failed checks
+    showPaywall();
+    setSyncBar('');
   }
 }
 
@@ -1790,11 +1788,6 @@ async function bootUser(user){
   $('auth-overlay').style.display='none';
   $('app').style.display='block';
   $('user-email').textContent=user.email;
-
-  // Show skeleton while loading
-  $('app').style.display='block';
-  const dash=$('pane-dashboard');
-  if(dash) dash.innerHTML=`<div style="padding:40px 0;text-align:center;color:var(--text2);font-size:13px">Loading...</div>`;
 
   window._accessGranted=false;
   window._paywallActive=false;
