@@ -166,7 +166,32 @@
   .add-form{background:var(--bg2);border-radius:var(--radius-sm);padding:14px;margin-top:4px;display:flex;flex-direction:column;gap:10px;}
   .add-row{display:flex;gap:8px;flex-wrap:wrap;}
   .add-row input,.add-row select{flex:1;min-width:120px;}
-  /* ── Onboarding overlay ── */
+  /* ── Quick Entry overlay ── */
+  #qe-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+  #qe-overlay.open{display:flex;}
+  .qe-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:400px;overflow:hidden;}
+  .qe-header{padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center;}
+  .qe-progress-bar{height:3px;background:var(--border);margin:14px 0 0;}
+  .qe-progress-fill{height:100%;background:#1D9E75;transition:width .25s;}
+  .qe-body{padding:28px 28px 20px;}
+  .qe-cat{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:6px;}
+  .qe-name{font-size:22px;font-weight:600;letter-spacing:-.3px;margin-bottom:4px;}
+  .qe-last{font-size:13px;color:var(--text3);margin-bottom:24px;font-family:var(--mono);}
+  .qe-input-wrap{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+  .qe-currency{font-size:28px;color:var(--text2);font-family:var(--mono);}
+  .qe-input{font-size:36px;font-family:var(--mono);font-weight:500;background:transparent;border:none;border-bottom:2px solid var(--border2);color:var(--text);outline:none;width:100%;padding-bottom:4px;transition:border-color .15s;}
+  .qe-input:focus{border-bottom-color:#1D9E75;}
+  .qe-skip{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;text-decoration:underline;}
+  .qe-skip:hover{color:var(--text2);}
+  .qe-footer{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-top:1px solid var(--border);}
+  .qe-back{font-size:13px;color:var(--text2);background:none;border:1px solid var(--border2);border-radius:7px;padding:8px 16px;cursor:pointer;font-family:inherit;}
+  .qe-back:hover{color:var(--text);}
+  .qe-next{font-size:13px;font-weight:600;background:#1D9E75;color:#fff;border:none;border-radius:7px;padding:8px 20px;cursor:pointer;font-family:inherit;}
+  .qe-next:hover{background:#0f6e56;}
+  /* Entry mode toggle */
+  .entry-mode-toggle{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;width:fit-content;margin-bottom:18px;}
+  .entry-mode-btn{font-size:12px;font-family:inherit;border:none;background:transparent;color:var(--text2);padding:5px 14px;border-radius:6px;cursor:pointer;transition:all .15s;}
+  .entry-mode-btn.active{background:var(--bg3);color:var(--text);font-weight:500;}
   #onboarding-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
   .onboarding-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:520px;padding:32px;position:relative;}
   .ob-step-indicator{display:flex;gap:6px;margin-bottom:24px;}
@@ -244,6 +269,34 @@ function forgotPassword(){
       <span id="auth-forgot-wrap"><a href="#" onclick="forgotPassword();return false" style="color:var(--text2)">Forgot password?</a></span>
     </p>
     <p style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center">Your username is your email address</p>
+  </div>
+</div>
+
+<!-- Quick Entry overlay -->
+<div id="qe-overlay">
+  <div class="qe-box">
+    <div class="qe-header">
+      <span id="qe-counter" style="font-size:12px;color:var(--text3)"></span>
+      <button onclick="qeClose()" style="font-size:18px;color:var(--text3);background:none;border:none;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div class="qe-progress-bar"><div class="qe-progress-fill" id="qe-fill"></div></div>
+    <div class="qe-body">
+      <div class="qe-cat" id="qe-cat"></div>
+      <div class="qe-name" id="qe-name"></div>
+      <div class="qe-last" id="qe-last"></div>
+      <div class="qe-input-wrap">
+        <span class="qe-currency">$</span>
+        <input class="qe-input" id="qe-input" type="number" min="0" step="1" placeholder="0"
+          onkeydown="if(event.key==='Enter')qeNext()"/>
+      </div>
+      <div style="margin-top:8px;">
+        <button class="qe-skip" onclick="qeSkip()">Skip this account</button>
+      </div>
+    </div>
+    <div class="qe-footer">
+      <button class="qe-back" id="qe-back" onclick="qePrev()">← Back</button>
+      <button class="qe-next" id="qe-next-btn" onclick="qeNext()">Next →</button>
+    </div>
   </div>
 </div>
 
@@ -703,6 +756,134 @@ function obNext(){
   renderObStep();
 }
 
+/* ─────────────────────────────────────────
+   Quick Entry
+───────────────────────────────────────── */
+let qeAccounts=[];
+let qeIndex=0;
+let qeValues={};
+let qeDate='';
+
+function setEntryMode(mode){
+  $('mode-regular').classList.toggle('active', mode==='regular');
+  $('mode-quick').classList.toggle('active', mode==='quick');
+  if(mode==='quick') qeStart();
+}
+
+function qeStart(){
+  qeAccounts=activeAccounts();
+  if(!qeAccounts.length) return;
+  qeIndex=0;
+  qeValues={};
+  // Pre-fill with last entry values
+  const last=entries.length?entries[entries.length-1]:null;
+  qeAccounts.forEach(a=>{ qeValues[a.name]=last?(last.values[a.name]||0):0; });
+  qeDate=$('edate')?.value||new Date().toISOString().split('T')[0];
+  $('qe-overlay').classList.add('open');
+  qeRender();
+  setTimeout(()=>$('qe-input')?.focus(),100);
+}
+
+function qeRender(){
+  const a=qeAccounts[qeIndex];
+  const total=qeAccounts.length;
+  const last=entries.length?entries[entries.length-1]:null;
+  const lastVal=last?(last.values[a.name]||0):0;
+
+  $('qe-counter').textContent=`${qeIndex+1} of ${total}`;
+  $('qe-fill').style.width=`${((qeIndex)/total)*100}%`;
+  $('qe-cat').textContent=a.cat;
+  $('qe-name').textContent=a.name;
+  $('qe-last').textContent=lastVal>0?`Last: ${fmt(lastVal)}`:'No previous value';
+  $('qe-input').value=qeValues[a.name]||'';
+  $('qe-input').placeholder='0';
+  $('qe-back').style.visibility=qeIndex===0?'hidden':'visible';
+  $('qe-next-btn').textContent=qeIndex===total-1?'Save ✓':'Next →';
+  setTimeout(()=>{
+    const inp=$('qe-input');
+    if(inp){inp.focus();inp.select();}
+  },50);
+}
+
+function qeNext(){
+  // Save current value
+  const val=parseFloat($('qe-input')?.value)||0;
+  qeValues[qeAccounts[qeIndex].name]=val;
+
+  if(qeIndex===qeAccounts.length-1){
+    qeSave();
+  } else {
+    qeIndex++;
+    qeRender();
+  }
+}
+
+function qePrev(){
+  const val=parseFloat($('qe-input')?.value)||0;
+  qeValues[qeAccounts[qeIndex].name]=val;
+  if(qeIndex>0){qeIndex--;qeRender();}
+}
+
+function qeSkip(){
+  // Keep existing value, just move on
+  if(qeIndex===qeAccounts.length-1){
+    qeSave();
+  } else {
+    qeIndex++;
+    qeRender();
+  }
+}
+
+function qeClose(){
+  // Check if any values have been entered
+  const hasData=Object.values(qeValues).some(v=>v>0);
+  if(hasData){
+    if(!confirm('You have unsaved entry data. Save before closing?')){
+      $('qe-overlay').classList.remove('open');
+      // Reset toggle back to Regular
+      $('mode-regular').classList.add('active');
+      $('mode-quick').classList.remove('active');
+      return;
+    }
+    qeSave();
+  } else {
+    $('qe-overlay').classList.remove('open');
+    $('mode-regular').classList.add('active');
+    $('mode-quick').classList.remove('active');
+  }
+}
+
+async function qeSave(){
+  $('qe-fill').style.width='100%';
+  const values={};
+  Object.entries(qeValues).forEach(([k,v])=>{if(v>0) values[k]=v;});
+  if(!Object.keys(values).length){
+    $('qe-overlay').classList.remove('open');
+    $('mode-regular').classList.add('active');
+    $('mode-quick').classList.remove('active');
+    return;
+  }
+  const entry={date:qeDate,values};
+  const existing=entries.findIndex(e=>e.date===entry.date);
+  if(existing>=0) entries[existing]=entry;
+  else entries.push(entry);
+  entries.sort((a,b)=>a.date<b.date?-1:1);
+  persist();
+  $('qe-overlay').classList.remove('open');
+  $('mode-regular').classList.add('active');
+  $('mode-quick').classList.remove('active');
+  if(currentUser){
+    setSyncBar('Saving...');
+    try{
+      await saveEntryToSupabase(entry);
+      setSyncBar('Saved ✓','var(--green)');
+      setTimeout(()=>setSyncBar(''),2000);
+    } catch(e){setSyncBar('Saved locally (sync failed)','var(--amber)');}
+  }
+  fv={};
+  switchTab('dashboard');
+}
+
 function renderDash(){
   const el=$('pane-dashboard');
   if(!entries.length){
@@ -1037,7 +1218,12 @@ function renderEnter(){
   const el=$('pane-enter');
   if(!Object.keys(fv).length) fv={};
 
-  let html=`<div class="entry-bar">
+  let html=`
+  <div class="entry-mode-toggle">
+    <button class="entry-mode-btn active" id="mode-regular" onclick="setEntryMode('regular')">Regular</button>
+    <button class="entry-mode-btn" id="mode-quick" onclick="setEntryMode('quick')">Quick Entry</button>
+  </div>
+  <div class="entry-bar">
     <div class="field"><label>Date</label><input type="date" id="edate" value="${today}"/></div>
     <div><div class="live-total-label">Running total</div><div class="live-total" id="live-total">${fmt(0)}</div></div>
     <div style="margin-left:auto;align-self:flex-end"><button class="primary" onclick="saveEntry()">Save entry</button></div>
