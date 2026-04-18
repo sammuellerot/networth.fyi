@@ -1803,6 +1803,21 @@ function renderSettings(){
   <div id="settings-msg" style="margin-top:14px"></div>
 
   <div style="margin-top:40px;padding-top:24px;border-top:1px solid var(--border);">
+    <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Monthly entry reminder</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Get an email on the 1st of each month with a link that opens directly into Quick Entry.</p>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <div style="position:relative;width:36px;height:20px;flex-shrink:0;">
+        <input type="checkbox" id="reminder-toggle" onchange="saveReminderSetting(this.checked)"
+          style="opacity:0;width:0;height:0;position:absolute;"/>
+        <span id="reminder-track" style="position:absolute;inset:0;border-radius:20px;background:var(--border2);transition:background .2s;cursor:pointer;" onclick="document.getElementById('reminder-toggle').click()">
+          <span id="reminder-thumb" style="position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;"></span>
+        </span>
+      </div>
+      <span style="font-size:13px;color:var(--text2);" id="reminder-label">Off</span>
+    </label>
+  </div>
+
+  <div style="margin-top:40px;padding-top:24px;border-top:1px solid var(--border);">
     <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Import history</p>
     <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">Upload a CSV to import historical entries. Each row is one entry date across all your accounts.<br>
     <span style="color:var(--text3);">Format: first column is <code style="font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px;">Date</code> (YYYY-MM-DD), then one column per account name matching exactly.</span></p>
@@ -1828,6 +1843,7 @@ function renderSettings(){
     <button onclick="confirmDeleteAccount()" id="delete-account-btn" style="font-size:12px;padding:7px 16px;border-radius:7px;cursor:pointer;font-family:inherit;background:transparent;border:1px solid var(--red);color:var(--red);transition:all .15s;">Delete my account</button>
     <div id="delete-account-msg" style="margin-top:10px;font-size:12px;"></div>
   </div>`;
+  renderReminderToggle(settings.reminderEnabled);
 }
 
 /* ─────────────────────────────────────────
@@ -1923,6 +1939,36 @@ async function importCSV(input){
     if(msg) msg.innerHTML=`<div class="msg err">${e.message||'Import failed. Check your file format.'}</div>`;
     input.value='';
   }
+}
+
+function renderReminderToggle(enabled){
+  const toggle=$('reminder-toggle');
+  const track=$('reminder-track');
+  const thumb=$('reminder-thumb');
+  const label=$('reminder-label');
+  if(!toggle) return;
+  toggle.checked=!!enabled;
+  if(enabled){
+    if(track) track.style.background='#1D9E75';
+    if(thumb) thumb.style.transform='translateX(16px)';
+    if(label) label.textContent='On — you\'ll get a reminder on the 1st of each month';
+  } else {
+    if(track) track.style.background='var(--border2)';
+    if(thumb) thumb.style.transform='translateX(0)';
+    if(label) label.textContent='Off';
+  }
+}
+
+async function saveReminderSetting(enabled){
+  renderReminderToggle(enabled);
+  if(!currentUser) return;
+  try{
+    await sb.from('user_settings').upsert({
+      user_id:currentUser.id,
+      reminder_enabled:enabled,
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
+  } catch(e){console.error('Save reminder error:',e);}
 }
 
 function saveSetting(key,val){
@@ -2269,7 +2315,8 @@ async function loadFromSupabase(){
       forecastYears:s?.forecast_years||3,
       lookbackMonths:s?.lookback_months||12,
       birthday:s?.birthday||'',
-      goalAmount:s?.goal_amount||''
+      goalAmount:s?.goal_amount||'',
+      reminderEnabled:s?.reminder_enabled||false
     };
 
     // Check onboarding
@@ -2487,11 +2534,18 @@ async function bootUser(user){
 
   if(window._accessGranted){
     hidePaywall();
-      const savedTab=sessionStorage.getItem('nw_tab');
-    if(savedTab&&savedTab!=='dashboard'){
-      switchTab(savedTab);
+    const postLogin=sessionStorage.getItem('nw_post_login');
+    if(postLogin==='quick'){
+      sessionStorage.removeItem('nw_post_login');
+      switchTab('enter');
+      setTimeout(()=>qeStart(),300);
     } else {
-      renderDash();
+      const savedTab=sessionStorage.getItem('nw_tab');
+      if(savedTab&&savedTab!=='dashboard'){
+        switchTab(savedTab);
+      } else {
+        renderDash();
+      }
     }
   }
 }
@@ -2539,8 +2593,18 @@ window.addEventListener('load', async()=>{
   if(session?.user){
     if(bootScreen) bootScreen.style.display='none';
     await bootUser(session.user);
+    // Check for quick entry deep link
+    const params=new URLSearchParams(window.location.search);
+    if(params.get('quick')==='1'){
+      switchTab('enter');
+      setTimeout(()=>qeStart(),300);
+    }
   } else {
     if(bootScreen) bootScreen.style.display='none';
+    // Store intent for after login
+    if(new URLSearchParams(window.location.search).get('quick')==='1'){
+      sessionStorage.setItem('nw_post_login','quick');
+    }
     showAuth();
   }
 });
