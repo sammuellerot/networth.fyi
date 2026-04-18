@@ -119,8 +119,8 @@ footer{padding:36px 48px;border-top:1px solid var(--border);display:flex;justify
 .footer-logo{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--text2);}
 footer p{font-size:12px;color:var(--text3);}
 footer nav{display:flex;gap:0;}
-footer nav a{font-size:12px;color:var(--text3);text-decoration:none;margin-left:20px;}
-footer nav a:hover{color:var(--text2);}
+footer nav a{font-size:13px;color:var(--text2);text-decoration:none;margin-left:24px;}
+footer nav a:hover{color:var(--text);}
 @media(max-width:600px){footer{padding:28px 20px;flex-direction:column;text-align:center;}footer nav{justify-content:center;}}
 
 /* Animations */
@@ -136,8 +136,6 @@ footer nav a:hover{color:var(--text2);}
 <nav>
   <a href="/" class="nav-logo">Networth.fyi</a>
   <div class="nav-links">
-    <a href="#privacy">Features</a>
-    <a href="#pricing">Pricing</a>
     <a href="/app" class="nav-cta">Start free trial →</a>
   </div>
 </nav>
@@ -625,18 +623,17 @@ renderDemo();
   <a href="/app" class="btn-primary reveal">Start your free trial →</a>
 </div>
 
+<!-- Bottom links -->
+<div style="border-top:1px solid var(--border);padding:28px 48px;display:flex;justify-content:center;gap:40px;flex-wrap:wrap;">
+  <a href="/app" style="font-size:13px;color:var(--text2);text-decoration:none;">App</a>
+  <a href="mailto:hello@networth.fyi" style="font-size:13px;color:var(--text2);text-decoration:none;">Contact</a>
+  <a href="/privacy.html" style="font-size:13px;color:var(--text2);text-decoration:none;">Privacy</a>
+  <a href="/terms.html" style="font-size:13px;color:var(--text2);text-decoration:none;">Terms</a>
+</div>
+
 <!-- Footer -->
 <footer>
-  <div>
-    <div class="footer-logo">Networth.fyi</div>
-    <p style="margin-top:5px;">© 2026 Networth.fyi. All rights reserved.</p>
-  </div>
-  <nav>
-    <a href="/app">App</a>
-    <a href="mailto:hello@networth.fyi">Contact</a>
-    <a href="/privacy.html">Privacy</a>
-    <a href="/terms.html">Terms</a>
-  </nav>
+  <p style="margin:0 auto;font-size:12px;color:var(--text3);text-align:center;">© 2026 Networth.fyi. All rights reserved.</p>
 </footer>
 
 <script>
