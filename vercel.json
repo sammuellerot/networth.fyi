@@ -3,8 +3,18 @@
     "api/webhook.js": {
       "memory": 128,
       "maxDuration": 10
+    },
+    "api/reminder.js": {
+      "memory": 128,
+      "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/reminder",
+      "schedule": "0 9 1 * *"
+    }
+  ],
   "rewrites": [
     { "source": "/app", "destination": "/index.html" }
   ],
