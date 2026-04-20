@@ -4,7 +4,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
-const APP_URL = process.env.APP_URL || 'https://networth-fyi.vercel.app';
+const APP_URL = process.env.APP_URL || 'https://equiterra.vercel.app';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -59,13 +59,13 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Networth.fyi <onboarding@resend.dev>',
+          from: 'Equiterra <onboarding@resend.dev>',
           to: email,
           subject: `Time to update your net worth — ${month}`,
           html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#0a0a0b;font-family:Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
 <tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
-<tr><td style="padding-bottom:28px;"><span style="font-family:Georgia,serif;font-size:22px;color:#f0ede8;">Networth.fyi</span></td></tr>
+<tr><td style="padding-bottom:28px;"><span style="font-family:Georgia,serif;font-size:22px;color:#f0ede8;">Equiterra</span></td></tr>
 <tr><td style="background:#111113;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:32px;">
   <p style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;">Monthly reminder</p>
   <h1 style="margin:0 0 14px;font-size:22px;font-weight:600;color:#f0ede8;">Time to log ${month}</h1>
