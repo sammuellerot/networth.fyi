@@ -4,15 +4,15 @@
 <meta charset="UTF-8"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Networth.fyi — Track your net worth. Own your data.</title>
+<title>Equiterra — Track your net worth. Own your data.</title>
 <meta name="description" content="Manual net worth tracking with zero bank connections. No OAuth tokens. No data brokers. Track every account, visualize your progress, and forecast your future."/>
 <meta name="theme-color" content="#1D9E75"/>
-<meta property="og:title" content="Networth.fyi — Track your net worth. Own your data."/>
+<meta property="og:title" content="Equiterra — Track your net worth. Own your data."/>
 <meta property="og:description" content="Manual net worth tracking with zero bank connections. Private by default."/>
-<meta property="og:url" content="https://networth.fyi"/>
+<meta property="og:url" content="https://equiterra.app"/>
 <meta property="og:type" content="website"/>
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Networth.fyi"/>
+<meta name="twitter:title" content="Equiterra"/>
 <meta name="twitter:description" content="Track your net worth. Own your data. No bank connections."/>
 
 
@@ -249,12 +249,12 @@ function forgotPassword(){
 </script>
 
 <!-- Boot screen — shown while checking session -->
-<div id="boot-screen"><div class="boot-logo">Networth.fyi</div></div>
+<div id="boot-screen"><div class="boot-logo">Equiterra</div></div>
 
 <!-- Auth overlay — shown when logged out -->
 <div id="auth-overlay">
   <div class="auth-box">
-    <div class="auth-logo">Networth.fyi</div>
+    <div class="auth-logo">Equiterra</div>
     <div class="auth-sub">Your net worth. Your data. Private by default.</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="setAuthTab('login')">Sign in</button>
@@ -313,7 +313,7 @@ function forgotPassword(){
 <div id="app" style="display:none">
   <nav id="sidebar">
     <div id="sidebar-logo">
-      <div class="logo-text">Networth.fyi</div>
+      <div class="logo-text">Equiterra</div>
     </div>
     <div id="sidebar-nav">
       <button class="tab active" onclick="switchTab('dashboard')">
@@ -644,7 +644,7 @@ function renderObStep(){
 
   if(obStep===1){
     el.innerHTML=`
-      <div class="ob-title">Welcome to Networth.fyi 👋</div>
+      <div class="ob-title">Welcome to Equiterra 👋</div>
       <div class="ob-sub">Let's get your net worth set up in 3 quick steps. We'll walk you through adding your accounts, entering your first values, then you'll see your dashboard come to life.<br><br>This takes about 3 minutes.</div>
       <div class="ob-footer">
         <button class="ob-skip" onclick="hideOnboarding()">Do this later</button>
@@ -2018,7 +2018,7 @@ async function deleteAccount(){
     showAuth();
   } catch(e){
     console.error('Delete account error:',e);
-    if(msg){msg.style.color='var(--red)';msg.textContent='Error deleting account. Please contact hello@networth.fyi';}
+    if(msg){msg.style.color='var(--red)';msg.textContent='Error deleting account. Please contact hello@equiterra.app';}
     if(btn){btn.disabled=false;btn.textContent='Delete my account';}
   }
 }
@@ -2096,7 +2096,7 @@ function showAuth(){
   const box=document.querySelector('.auth-box');
   if(box && !$('auth-email')){
     box.innerHTML=`
-      <div class="auth-logo">Networth.fyi</div>
+      <div class="auth-logo">Equiterra</div>
       <div class="auth-sub">Your net worth. Your data. Private by default.</div>
       <div class="auth-tabs">
         <button class="auth-tab active" onclick="setAuthTab('login')">Sign in</button>
@@ -2151,8 +2151,8 @@ function getLSCheckoutUrl(base){
 }
 
 function paywallHTML(){
-  const monthlyUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
-  const lifetimeUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
+  const monthlyUrl=getLSCheckoutUrl('https://equiterra.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
+  const lifetimeUrl=getLSCheckoutUrl('https://equiterra.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
   return `<div class="paywall-inner">
     <div style="font-size:32px;margin-bottom:12px">🔒</div>
     <div class="paywall-title">Your 14-day free trial has ended</div>
@@ -2173,7 +2173,7 @@ function paywallHTML(){
       </a>
     </div>
     <p style="font-size:12px;color:var(--text2);margin-top:4px">Click a plan above to open the checkout page.<br>Already purchased? <a href="#" onclick="verifyAndUnlock();return false" style="color:var(--green);text-decoration:underline">Click here to verify and unlock</a></p>
-    <p style="font-size:12px;color:var(--text2);margin-top:12px">Questions? <a href="mailto:hello@networth.fyi" style="color:var(--text2);text-decoration:underline">hello@networth.fyi</a></p>
+    <p style="font-size:12px;color:var(--text2);margin-top:12px">Questions? <a href="mailto:hello@equiterra.app" style="color:var(--text2);text-decoration:underline">hello@equiterra.app</a></p>
     <p style="margin-top:16px"><a href="#" onclick="signOut();return false" style="font-size:12px;color:var(--text2)">Sign out</a></p>
   </div>`;
 }
@@ -2343,7 +2343,7 @@ async function loadFromSupabase(){
     if(access.status==='trialing'&&access.daysLeft!==null){
       const bar=$('sync-bar');
       if(bar){
-        bar.innerHTML=`<span style="color:var(--amber)">Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} left — <a href="https://networthfyi.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" target="_blank" style="color:var(--amber);text-decoration:underline">Upgrade</a></span>`;
+        bar.innerHTML=`<span style="color:var(--amber)">Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} left — <a href="https://equiterra.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" target="_blank" style="color:var(--amber);text-decoration:underline">Upgrade</a></span>`;
       }
     }
 
@@ -2615,7 +2615,7 @@ function showResetPassword(){
   const box = document.querySelector('.auth-box');
   if(box){
     box.innerHTML=`
-      <div class="auth-logo">Networth.fyi</div>
+      <div class="auth-logo">Equiterra</div>
       <div class="auth-sub">Set a new password for your account.</div>
       <div class="auth-field"><label>New password</label><input type="password" id="reset-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitReset()"/></div>
       <div class="auth-field"><label>Confirm password</label><input type="password" id="reset-pw2" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitReset()"/></div>
