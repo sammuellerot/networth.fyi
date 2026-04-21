@@ -718,7 +718,8 @@ function renderObStep(){
       </div>`;
 
   } else if(obStep===4){
-    hideOnboarding();
+    // Auto-dismiss — user completed the flow
+    dismissOnboarding();
     renderDash();
   }
 }
@@ -775,6 +776,14 @@ async function obSaveEntryAndNext(){
         setTimeout(()=>setSyncBar(''),2000);
       }catch(e){setSyncBar('');}
     }
+  }
+  // Auto-dismiss regardless — user reached the end of the flow
+  if(currentUser){
+    await sb.from('user_settings').upsert({
+      user_id:currentUser.id,
+      onboarding_dismissed:true,
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
   }
   obStep=4;
   renderObStep();
