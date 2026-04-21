@@ -78,7 +78,7 @@ nav.scrolled .nav-cta{opacity:1;visibility:visible;}
 @media(max-width:640px){.grid-2{grid-template-columns:1fr;}}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px;transition:border-color .2s;}
 .card:hover{border-color:var(--border2);}
-.card-icon{width:40px;height:40px;background:var(--green-dim);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:16px;}
+.card-icon{width:42px;height:42px;background:rgba(29,158,117,0.08);border:1px solid rgba(29,158,117,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
 .card h3{font-size:15px;font-weight:500;margin-bottom:8px;}
 .card p{font-size:13px;color:var(--text2);line-height:1.65;}
 
@@ -186,24 +186,52 @@ footer nav a:hover{color:var(--text);}
   </div>
   <div class="grid-2 reveal reveal-delay">
     <div class="card">
-      <div class="card-icon">🔒</div>
+      <div class="card-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 3v4M14 3v4" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="5" y="7" width="12" height="6" rx="2" stroke="#1D9E75" stroke-width="1.5"/>
+          <path d="M11 13v3" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M9 17h4" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 4L19 8M19 4L15 8" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
       <h3>No bank connections</h3>
       <p>We never ask for your banking credentials. No Plaid. No OAuth tokens sitting on a server. Nothing to breach. Your account numbers stay with your bank.</p>
     </div>
     <div class="card">
-      <div class="card-icon">📊</div>
+      <div class="card-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#1D9E75" stroke-width="1.5"/>
+          <rect x="12" y="3" width="7" height="7" rx="1.5" stroke="#1D9E75" stroke-width="1.5"/>
+          <rect x="3" y="12" width="7" height="7" rx="1.5" stroke="#1D9E75" stroke-width="1.5"/>
+          <path d="M12 15.5h7M15.5 12v7" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
       <h3>Works for everything</h3>
       <p>Brokerage, real estate, crypto, HSA, home equity, business accounts — if it has a dollar value, you can track it. Plaid doesn't support half of these.</p>
     </div>
     <div class="card">
-      <div class="card-icon">🎯</div>
+      <div class="card-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 11s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6z" stroke="#1D9E75" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M8 13l2.5-4 2 2.5L14 9" stroke="#1D9E75" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <h3>Intentional tracking</h3>
-      <p>The 15 minutes you spend entering your numbers every two weeks is the most valuable financial habit you can build. Manual entry forces you to actually look.</p>
+      <p>The 15 minutes you spend entering your numbers each month is the most valuable financial habit you can build. Manual entry forces you to actually look.</p>
     </div>
     <div class="card">
-      <div class="card-icon">💾</div>
+      <div class="card-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="4" width="13" height="14" rx="2" stroke="#1D9E75" stroke-width="1.5"/>
+          <circle cx="9.5" cy="11" r="2.5" stroke="#1D9E75" stroke-width="1.3"/>
+          <path d="M9.5 11h.01" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M16 7h2.5a.5.5 0 01.5.5v7a.5.5 0 01-.5.5H16" stroke="#1D9E75" stroke-width="1.3" stroke-linecap="round"/>
+          <path d="M12 9h2M12 13h2" stroke="#1D9E75" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </div>
       <h3>Your data, your rules</h3>
-      <p>We make money from subscriptions, not your data. No ads. No selling to wealth management firms. No pivot to selling your financial profile to the highest bidder.</p>
+      <p>We make money from subscriptions, not your data. No ads. No selling to wealth management firms. Export everything any time in one click.</p>
     </div>
   </div>
 </section>
