@@ -107,7 +107,11 @@
     .dash-top{grid-template-columns:1fr;}
     .dash-top .cards{flex-direction:row;flex-wrap:wrap;}
   }
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+  .cards-few{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;max-width:calc(66.66% + 10px);}
+  .filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:20px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);}
+  .filter-bar-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-right:4px;}
+  .filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);}
   .dash-widget{position:relative;border-radius:var(--radius-sm);}
   .dash-widget[draggable=true]{cursor:grab;}
   .dash-widget[draggable=true]:active{cursor:grabbing;}
@@ -395,7 +399,7 @@ let dashFilter='all', dashFromDate='', dashToDate='', selectedCat=null;
 let editingEntryIdx=null;
 let showActual=true, showForecast=true, momMode='$'; // chart toggles
 
-const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,birthday:'',goalAmount:'',forecastMethod:'linear',visuals:{lineChart:true,momChart:true,pieChart:true,cardNetWorth:true,cardSinceLastEntry:true,cardLastUpdated:true,cardLiquid:true,cardAvgMonth:true,cardAssets:true,cardLiabilities:true},reminderEnabled:false};
+const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,birthday:'',goalAmount:'',forecastMethod:'linear',visuals:{lineChart:true,momChart:true,pieChart:true,cardNetWorth:true,cardLastUpdated:true,cardLiquid:true,cardAvgMonth:true,cardAssets:true,cardLiabilities:true},reminderEnabled:false};
 let settings={...DEFAULT_SETTINGS};
 
 function loadSettings(){
@@ -924,8 +928,8 @@ async function qeSave(){
 }
 
 /* ── Dashboard widget drag-and-drop ── */
-const WIDGET_KEYS=['lineChart','momChart','pieChart'];
-const CARD_KEYS=['cardNetWorth','cardSinceLastEntry','cardLastUpdated','cardLiquid','cardAvgMonth','cardAssets','cardLiabilities'];
+const WIDGET_KEYS=['lineChart','catTable','pieChart','momChart'];
+const CARD_KEYS=['cardNetWorth','cardLastUpdated','cardLiquid','cardAvgMonth','cardAssets','cardLiabilities'];
 
 function getDashWidgetOrder(){
   try{
@@ -1027,23 +1031,38 @@ function renderDash(){
   let html='';
 
   if(selectedCat===null){
-    // ── Two-column top: cards left, by-category right ──
+    const vis2=settings.visuals||{};
     const allCards={
-      cardNetWorth:vis.cardNetWorth!==false?`<div class="card" data-card="cardNetWorth" style="cursor:grab" title="Drag to reorder"><div class="card-label">Net worth</div><div class="card-value">${fmt(total)}</div></div>`:'',
-      cardSinceLastEntry:vis.cardSinceLastEntry!==false?(diff!==null?`<div class="card" data-card="cardSinceLastEntry" style="cursor:grab" title="Drag to reorder"><div class="card-label">Since last entry</div><div class="card-value ${diff>=0?'green':'red'}">${fmtD(diff)}</div><div class="card-sub">${diff>=0?'+':''}${pct.toFixed(1)}%</div></div>`:`<div class="card" data-card="cardSinceLastEntry" style="cursor:grab"><div class="card-label">Entries</div><div class="card-value">${entries.length}</div></div>`):'',
-      cardLastUpdated:vis.cardLastUpdated!==false?`<div class="card" data-card="cardLastUpdated" style="cursor:grab" title="Drag to reorder"><div class="card-label">Last updated</div><div class="card-value" style="font-size:13px;padding-top:4px">${last.date}</div><div class="card-sub" style="font-family:inherit">${entries.length} entr${entries.length===1?'y':'ies'}</div></div>`:'',
-      cardLiquid:vis.cardLiquid!==false?`<div class="card" data-card="cardLiquid" style="cursor:grab" title="Drag to reorder"><div class="card-label">Liquid assets</div><div class="card-value" style="color:var(--green)">${fmt(liquidTotal)}</div>${liquidDiff!==null&&liquidDiff!==0?`<div class="card-sub" style="color:${liquidDiff>=0?'var(--green)':'var(--red)'}">${fmtD(liquidDiff)}</div>`:''}</div>`:'',
-      cardAvgMonth:vis.cardAvgMonth!==false&&avgMo!==null?`<div class="card" data-card="cardAvgMonth" style="cursor:grab" title="Drag to reorder"><div class="card-label">Avg/month (3mo)</div><div class="card-value ${avgMo.dollar>=0?'green':'red'}">${fmtD(avgMo.dollar)}</div><div class="card-sub" style="color:${avgMo.dollar>=0?'var(--green)':'var(--red)'}">${avgMo.pct!==null?(avgMo.pct>=0?'+':'')+avgMo.pct+'% / mo':''}</div></div>`:'',
-      cardAssets:vis.cardAssets!==false?`<div class="card" data-card="cardAssets" style="cursor:grab" title="Drag to reorder"><div class="card-label">Total assets</div><div class="card-value" style="color:var(--green)">${fmt(assetTotal)}</div></div>`:'',
-      cardLiabilities:vis.cardLiabilities!==false?`<div class="card" data-card="cardLiabilities" style="cursor:grab" title="Drag to reorder"><div class="card-label">Total liabilities</div><div class="card-value" style="color:var(--red)">${fmt(liabTotal)}</div></div>`:'',
+      cardNetWorth:vis2.cardNetWorth!==false?`<div class="card" data-card="cardNetWorth" style="cursor:grab" title="Drag to reorder"><div class="card-label">Net worth</div><div class="card-value">${fmt(total)}</div></div>`:'',
+      cardLastUpdated:vis2.cardLastUpdated!==false?`<div class="card" data-card="cardLastUpdated" style="cursor:grab" title="Drag to reorder"><div class="card-label">Last updated</div><div class="card-value" style="font-size:13px;padding-top:4px">${last.date}</div><div class="card-sub" style="font-family:inherit">${entries.length} entr${entries.length===1?'y':'ies'}</div></div>`:'',
+      cardLiquid:vis2.cardLiquid!==false?`<div class="card" data-card="cardLiquid" style="cursor:grab" title="Drag to reorder"><div class="card-label">Liquid assets</div><div class="card-value" style="color:var(--green)">${fmt(liquidTotal)}</div>${liquidDiff!==null&&liquidDiff!==0?`<div class="card-sub" style="color:${liquidDiff>=0?'var(--green)':'var(--red)'}">${fmtD(liquidDiff)}</div>`:''}</div>`:'',
+      cardAvgMonth:vis2.cardAvgMonth!==false&&avgMo!==null?`<div class="card" data-card="cardAvgMonth" style="cursor:grab" title="Drag to reorder"><div class="card-label">Avg/month (3mo)</div><div class="card-value ${avgMo.dollar>=0?'green':'red'}">${fmtD(avgMo.dollar)}</div><div class="card-sub" style="color:${avgMo.dollar>=0?'var(--green)':'var(--red)'}">${avgMo.pct!==null?(avgMo.pct>=0?'+':'')+avgMo.pct+'% / mo':''}</div></div>`:'',
+      cardAssets:vis2.cardAssets!==false?`<div class="card" data-card="cardAssets" style="cursor:grab" title="Drag to reorder"><div class="card-label">Total assets</div><div class="card-value" style="color:var(--green)">${fmt(assetTotal)}</div></div>`:'',
+      cardLiabilities:vis2.cardLiabilities!==false?`<div class="card" data-card="cardLiabilities" style="cursor:grab" title="Drag to reorder"><div class="card-label">Total liabilities</div><div class="card-value" style="color:var(--red)">${fmt(liabTotal)}</div></div>`:'',
     };
     const cardOrder=getCardOrder();
-    let cardsHtml=`<div class="cards" id="dash-cards">`;
-    cardOrder.forEach(k=>{if(allCards[k])cardsHtml+=allCards[k];});
+    const activeCards=cardOrder.filter(k=>allCards[k]);
+    const gridClass=activeCards.length<=3?'cards cards-few':'cards';
+    let cardsHtml=`<div class="${gridClass}" id="dash-cards">`;
+    activeCards.forEach(k=>{ cardsHtml+=allCards[k]; });
     cardsHtml+=`</div>`;
 
-    let catHtml=`<div>
-      <p class="section-label" style="margin-top:0;margin-bottom:7px">By category</p>
+    // ── Global filter bar ──
+    const fe2=getFilteredEntries();
+    const fromVal=dashFilter==='custom'?dashFromDate:(fe2.length?fe2[0].date:'');
+    const toVal=dashFilter==='custom'?dashToDate:(fe2.length?fe2[fe2.length-1].date:'');
+    const filterBtns=[['all','All'],['3y','3Y'],['1y','1Y'],['6m','6M']];
+    const filterBar=`<div class="filter-bar">
+      <span class="filter-bar-label">Range</span>
+      ${filterBtns.map(([f,l])=>`<button onclick="setDashFilter('${f}')" style="padding:3px 12px;font-size:11px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid ${dashFilter===f?'#1D9E75':'var(--border2)'};background:${dashFilter===f?'#1D9E75':'transparent'};color:${dashFilter===f?'#fff':'var(--text2)'};">${l}</button>`).join('')}
+      <input type="date" value="${fromVal}" onchange="setCustomFrom(this.value)" style="font-size:11px;padding:3px 7px;margin-left:4px"/>
+      <span style="font-size:11px;color:var(--text2)">–</span>
+      <input type="date" value="${toVal}" onchange="setCustomTo(this.value)" style="font-size:11px;padding:3px 7px;"/>
+    </div>`;
+
+    // ── By category table ──
+    let catHtml=`<div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px">
+      <div style="padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border)"><p class="section-label" style="margin:0">By category</p></div>
       <div class="list">`;
     getCats().forEach(cat=>{
       const accs=activeAccounts().filter(a=>a.cat===cat&&a.type!=='liability');
@@ -1062,8 +1081,6 @@ function renderDash(){
         </div>
       </div>`;
     });
-
-    // Liabilities row — reversed colors (down = green)
     const liabAccs=activeAccounts().filter(a=>a.type==='liability');
     if(liabAccs.length>0){
       const liabVal=liabAccs.reduce((s,a)=>s+(last.values[a.name]||0),0);
@@ -1079,8 +1096,6 @@ function renderDash(){
         </div>
       </div>`;
     }
-
-    // Archived with value
     const archivedWithValue=archivedAccounts().filter(a=>(last.values[a.name]||0)>0);
     if(archivedWithValue.length>0){
       archivedWithValue.forEach(a=>{
@@ -1093,25 +1108,32 @@ function renderDash(){
     }
     catHtml+=`</div></div>`;
 
-    html+=`<div class="dash-top">${cardsHtml}${catHtml}</div>`;
-
-    // ── Charts below — each wrapped in a draggable widget ──
     const pillBtn=(label,active,fn)=>`<button onclick="${fn}" data-pill style="padding:3px 12px;font-size:11px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid ${active?'#1D9E75':'var(--border2)'};background:${active?'#1D9E75':'transparent'};color:${active?'#fff':'var(--text2)'};transition:all .15s">${label}</button>`;
 
+    // Build widgets in fixed order: line → cat table → pie → mom
     const widgets={
-      lineChart:`<div class="dash-widget" data-widget="lineChart" draggable="true">
+      lineChart:`<div class="dash-widget" data-widget="lineChart" draggable="true" style="margin-bottom:20px">
         <span class="drag-handle" title="Drag to reorder">⠿</span>
-        <div class="section-label" style="margin-top:4px">Net worth over time</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-          ${filterUI_inline()}
-          <div style="margin-left:auto;display:flex;gap:5px">
-            ${pillBtn('Net worth',showActual,"toggleActual()")}
-            ${pillBtn('Forecast',showForecast,"toggleForecast()")}
-          </div>
+        <div class="section-label" style="margin-top:0">Net worth over time</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:10px;margin-left:auto;justify-content:flex-end">
+          ${pillBtn('Net worth',showActual,"toggleActual()")}
+          ${pillBtn('Forecast',showForecast,"toggleForecast()")}
         </div>
         <div class="chart-wrap" style="height:240px"><canvas id="dashLineChart" role="img" aria-label="Net worth over time">Net worth over time.</canvas></div>
       </div>`,
-      momChart:`<div class="dash-widget" data-widget="momChart" draggable="true" style="margin-top:20px">
+      catTable:`<div class="dash-widget" data-widget="catTable" draggable="true" style="margin-bottom:20px">
+        <span class="drag-handle" title="Drag to reorder">⠿</span>
+        ${catHtml}
+      </div>`,
+      pieChart:`<div class="dash-widget" data-widget="pieChart" draggable="true" style="margin-bottom:20px">
+        <span class="drag-handle" title="Drag to reorder">⠿</span>
+        <div class="section-label">Allocation by category</div>
+        <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <div style="position:relative;width:180px;height:180px;flex-shrink:0"><canvas id="dashPieChart" role="img" aria-label="Category allocation pie chart">Category allocation.</canvas></div>
+          <div id="pie-legend" style="flex:1;min-width:140px"></div>
+        </div>
+      </div>`,
+      momChart:`<div class="dash-widget" data-widget="momChart" draggable="true" style="margin-bottom:20px">
         <span class="drag-handle" title="Drag to reorder">⠿</span>
         <div class="section-label">Month-over-month change</div>
         <div style="display:flex;gap:5px;margin-bottom:10px">
@@ -1119,24 +1141,21 @@ function renderDash(){
           ${pillBtn('%',momMode==='%',"setMomMode('%')")}
         </div>
         <div class="chart-wrap" style="height:220px"><canvas id="dashMoMChart" role="img" aria-label="Month over month net worth change">Monthly change.</canvas></div>
-      </div>`,
-      pieChart:`<div class="dash-widget" data-widget="pieChart" draggable="true" style="margin-top:20px">
-        <span class="drag-handle" title="Drag to reorder">⠿</span>
-        <div class="section-label">Allocation by category</div>
-        <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-          <div style="position:relative;width:180px;height:180px;flex-shrink:0"><canvas id="dashPieChart" role="img" aria-label="Category allocation pie chart">Category allocation.</canvas></div>
-          <div id="pie-legend" style="flex:1;min-width:140px"></div>
-        </div>
       </div>`
     };
 
-    const widgetOrder=getDashWidgetOrder();
+    html+=cardsHtml;
+    html+=filterBar;
+
+    // Fixed order: line → cat table → pie → mom
+    const FIXED_ORDER=['lineChart','catTable','pieChart','momChart'];
     html+=`<div id="dash-widgets">`;
-    widgetOrder.forEach(k=>{
+    FIXED_ORDER.forEach(k=>{
       const v=settings.visuals||{};
       if(k==='lineChart'&&v.lineChart!==false) html+=widgets.lineChart;
-      else if(k==='momChart'&&v.momChart!==false) html+=widgets.momChart;
+      else if(k==='catTable') html+=widgets.catTable;
       else if(k==='pieChart'&&v.pieChart!==false) html+=widgets.pieChart;
+      else if(k==='momChart'&&v.momChart!==false) html+=widgets.momChart;
     });
     html+=`</div>`;
 
@@ -2036,7 +2055,6 @@ function renderSettings(){
   <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
     ${[
       ['cardNetWorth','Net worth','Total net worth'],
-      ['cardSinceLastEntry','Since last entry','Change since previous entry'],
       ['cardLastUpdated','Last updated','Date and entry count'],
       ['cardLiquid','Liquid assets','Sum of liquid accounts'],
       ['cardAvgMonth','Avg/month (3mo)','3-month average monthly change'],
