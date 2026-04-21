@@ -25,7 +25,7 @@
   #boot-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;}
   .boot-logo{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--text);opacity:.6;}
   .auth-box{width:100%;max-width:380px;}
-  .auth-logo{font-size:22px;font-weight:700;margin-bottom:6px;}
+  .auth-logo{font-size:26px;font-weight:400;margin-bottom:6px;font-family:'Cormorant Garamond',serif;letter-spacing:-.5px;}
   .auth-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
   .auth-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
   .auth-tab{flex:1;padding:8px;font-size:13px;background:transparent;border:none;cursor:pointer;font-family:inherit;color:var(--text2);}
@@ -74,7 +74,7 @@
   /* ── Sidebar ── */
   #sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:10;}
   #sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);margin-bottom:8px;}
-  #sidebar-logo .logo-text{font-size:17px;font-weight:600;letter-spacing:-.3px;color:var(--text);}
+  #sidebar-logo .logo-text{font-size:20px;font-weight:400;letter-spacing:-.3px;color:var(--text);font-family:'Cormorant Garamond',serif;}
   #sidebar-logo .logo-sub{font-size:10px;color:var(--text2);margin-top:1px;letter-spacing:.05em;text-transform:uppercase;}
   #sidebar-nav{flex:1;padding:4px 10px;}
   .tab{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;font-size:13px;background:transparent;border:none;border-radius:8px;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;font-weight:400;text-align:left;margin-bottom:2px;transition:background .12s,color .12s;}
@@ -272,6 +272,17 @@ function forgotPassword(){
   </div>
 </div>
 
+<!-- Idle warning -->
+<div id="idle-warning" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:800;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:32px 28px;max-width:360px;text-align:center;">
+    <div style="font-size:28px;margin-bottom:12px;">👋</div>
+    <p style="font-size:16px;font-weight:600;margin-bottom:8px;">Still there?</p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6;">You've been inactive for 15 minutes. We'll sign you out in 15 more minutes to keep your account secure.</p>
+    <button class="primary" style="width:100%;padding:10px" onclick="resetIdleTimer();document.getElementById('idle-warning').style.display='none'">Yes, keep me signed in</button>
+    <button onclick="signOut()" style="margin-top:10px;width:100%;padding:8px;font-size:13px;background:transparent;border:none;color:var(--text2);cursor:pointer;font-family:inherit">Sign out now</button>
+  </div>
+</div>
+
 <!-- Quick Entry overlay -->
 <div id="qe-overlay">
   <div class="qe-box">
@@ -337,7 +348,7 @@ function forgotPassword(){
       <button onclick="signOut()">
         <span style="font-size:13px">↪</span> Sign out
       </button>
-      <a href="mailto:sam.mueller@opsterra.com?subject=EquiTerra Feedback" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;font-size:12px;color:var(--text3);text-decoration:none;border-radius:7px;transition:background .12s;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='var(--bg)';this.style.color='var(--text2)'" onmouseout="this.style.background='transparent';this.style.color='var(--text3)'">
+      <a id="feedback-link" href="/feedback" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;font-size:12px;color:var(--text3);text-decoration:none;border-radius:7px;transition:background .12s;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='var(--bg)';this.style.color='var(--text2)'" onmouseout="this.style.background='transparent';this.style.color='var(--text3)'">
         <span style="font-size:13px">✉</span> Send feedback
       </a>
     </div>
@@ -377,7 +388,7 @@ let dashFilter='all', dashFromDate='', dashToDate='', selectedCat=null;
 let editingEntryIdx=null;
 let showActual=true, showForecast=true, momMode='$'; // chart toggles
 
-const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,birthday:'',goalAmount:'',forecastMethod:'linear',visuals:{lineChart:true,momChart:true,pieChart:true},reminderEnabled:false};
+const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,birthday:'',goalAmount:'',forecastMethod:'linear',visuals:{lineChart:true,momChart:true,pieChart:true,cardNetWorth:true,cardSinceLastEntry:true,cardLastUpdated:true,cardLiquid:true,cardAvgMonth:true,cardAssets:true,cardLiabilities:true},reminderEnabled:false};
 let settings={...DEFAULT_SETTINGS};
 
 function loadSettings(){
@@ -907,17 +918,22 @@ function renderDash(){
   const liquidPrev=prev?accounts.filter(a=>a.liquid&&!a.archived).reduce((s,a)=>s+(prev.values[a.name]||0),0):null;
   const liquidDiff=liquidPrev!==null?liquidTotal-liquidPrev:null;
   const avgMo=avgMonthlyChange3m();
+  const assetTotal=accounts.filter(a=>!a.archived&&a.type!=='liability').reduce((s,a)=>s+(last.values[a.name]||0),0);
+  const liabTotal=accounts.filter(a=>!a.archived&&a.type==='liability').reduce((s,a)=>s+(last.values[a.name]||0),0);
+  const vis=settings.visuals||{};
 
   let html='';
 
   if(selectedCat===null){
     // ── Two-column top: cards left, by-category right ──
     let cardsHtml=`<div class="cards">
-      <div class="card"><div class="card-label">Net worth</div><div class="card-value">${fmt(total)}</div></div>
-      ${diff!==null?`<div class="card"><div class="card-label">Since last entry</div><div class="card-value ${diff>=0?'green':'red'}">${fmtD(diff)}</div><div class="card-sub">${diff>=0?'+':''}${pct.toFixed(1)}%</div></div>`:`<div class="card"><div class="card-label">Entries</div><div class="card-value">${entries.length}</div></div>`}
-      <div class="card"><div class="card-label">Last updated</div><div class="card-value" style="font-size:13px;padding-top:4px">${last.date}</div><div class="card-sub" style="font-family:inherit">${entries.length} entr${entries.length===1?'y':'ies'}</div></div>
-      <div class="card"><div class="card-label">Liquid assets</div><div class="card-value" style="color:var(--green)">${fmt(liquidTotal)}</div>${liquidDiff!==null&&liquidDiff!==0?`<div class="card-sub" style="color:${liquidDiff>=0?'var(--green)':'var(--red)'}">${fmtD(liquidDiff)}</div>`:''}</div>
-      ${avgMo!==null?`<div class="card"><div class="card-label">Avg/month (3mo)</div><div class="card-value ${avgMo.dollar>=0?'green':'red'}">${fmtD(avgMo.dollar)}</div><div class="card-sub" style="color:${avgMo.dollar>=0?'var(--green)':'var(--red)'}">${avgMo.pct!==null?(avgMo.pct>=0?'+':'')+avgMo.pct+'% / mo':''}</div></div>`:''}
+      ${vis.cardNetWorth!==false?`<div class="card"><div class="card-label">Net worth</div><div class="card-value">${fmt(total)}</div></div>`:''}
+      ${vis.cardSinceLastEntry!==false?(diff!==null?`<div class="card"><div class="card-label">Since last entry</div><div class="card-value ${diff>=0?'green':'red'}">${fmtD(diff)}</div><div class="card-sub">${diff>=0?'+':''}${pct.toFixed(1)}%</div></div>`:`<div class="card"><div class="card-label">Entries</div><div class="card-value">${entries.length}</div></div>`):''}
+      ${vis.cardLastUpdated!==false?`<div class="card"><div class="card-label">Last updated</div><div class="card-value" style="font-size:13px;padding-top:4px">${last.date}</div><div class="card-sub" style="font-family:inherit">${entries.length} entr${entries.length===1?'y':'ies'}</div></div>`:''}
+      ${vis.cardLiquid!==false?`<div class="card"><div class="card-label">Liquid assets</div><div class="card-value" style="color:var(--green)">${fmt(liquidTotal)}</div>${liquidDiff!==null&&liquidDiff!==0?`<div class="card-sub" style="color:${liquidDiff>=0?'var(--green)':'var(--red)'}">${fmtD(liquidDiff)}</div>`:''}</div>`:''}
+      ${vis.cardAvgMonth!==false&&avgMo!==null?`<div class="card"><div class="card-label">Avg/month (3mo)</div><div class="card-value ${avgMo.dollar>=0?'green':'red'}">${fmtD(avgMo.dollar)}</div><div class="card-sub" style="color:${avgMo.dollar>=0?'var(--green)':'var(--red)'}">${avgMo.pct!==null?(avgMo.pct>=0?'+':'')+avgMo.pct+'% / mo':''}</div></div>`:''}
+      ${vis.cardAssets!==false&&liabTotal>0?`<div class="card"><div class="card-label">Total assets</div><div class="card-value" style="color:var(--green)">${fmt(assetTotal)}</div></div>`:''}
+      ${vis.cardLiabilities!==false&&liabTotal>0?`<div class="card"><div class="card-label">Total liabilities</div><div class="card-value" style="color:var(--red)">${fmt(liabTotal)}</div></div>`:''}
     </div>`;
 
     let catHtml=`<div>
@@ -1057,7 +1073,6 @@ function renderDashCharts(){
     const showActualLine = isCat ? true : showActual;
     const forecast=(!isCat&&showForecast)?getForecastDatasets(fe,color):null;
     const hasForecast=forecast&&forecast.labels&&forecast.labels.length>1;
-    console.log('[CHART] showForecast:',showForecast,'hasForecast:',hasForecast,'forecast:',forecast);
 
     // Build label set based on what's visible
     let allLabels;
@@ -1727,15 +1742,14 @@ function dateToAge(dateStr){
 }
 
 function getForecastDatasets(fe,color){
-  if(!fe.length||!settings.forecastYears||settings.forecastYears<=0){console.log('[FC] early exit');return [];}
+  if(!fe.length||!settings.forecastYears||settings.forecastYears<=0) return [];
 
   const lastEntry=fe[fe.length-1];
   const lastDay=dateToDay(lastEntry.date);
   const lookbackDays=settings.lookbackMonths*30.44;
   const cutoffDay=lastDay-lookbackDays;
   const window=fe.filter(e=>dateToDay(e.date)>=cutoffDay);
-  console.log('[FC] method:',settings.forecastMethod,'window:',window.length,'entries');
-  if(window.length<2){console.log('[FC] not enough data');return [];}
+  if(window.length<2) return [];
 
   const points=window.map(e=>({x:dateToDay(e.date),y:sumE(e)}));
   const forecastDays=Math.round(settings.forecastYears*365);
@@ -1861,6 +1875,29 @@ function renderSettings(){
         ${lbOptions.map(([v,l])=>`<option value="${v}"${settings.lookbackMonths===v?' selected':''}>${l}</option>`).join('')}
       </select>
     </div>
+  </div>
+
+  <div class="section-label" style="margin-top:20px">Dashboard cards</div>
+  <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+    ${[
+      ['cardNetWorth','Net worth','Total net worth'],
+      ['cardSinceLastEntry','Since last entry','Change since previous entry'],
+      ['cardLastUpdated','Last updated','Date and entry count'],
+      ['cardLiquid','Liquid assets','Sum of liquid accounts'],
+      ['cardAvgMonth','Avg/month (3mo)','3-month average monthly change'],
+      ['cardAssets','Total assets','Sum of all asset accounts'],
+      ['cardLiabilities','Total liabilities','Sum of all liability accounts'],
+    ].map(([key,label,desc],i)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);${i>0?'border-top:1px solid var(--border)':''}">
+      <div>
+        <p style="font-size:13px;font-weight:500">${label}</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:1px">${desc}</p>
+      </div>
+      <label class="liq-toggle" style="flex-shrink:0">
+        <input type="checkbox" ${(settings.visuals||{})[key]!==false?'checked':''} onchange="saveVisualToggle('${key}',this.checked)"/>
+        <span class="liq-slider"></span>
+      </label>
+    </div>`).join('')}
   </div>
 
   <div class="section-label" style="margin-top:20px">Dashboard visuals</div>
@@ -2362,6 +2399,8 @@ function showApp(user){
   $('auth-overlay').style.display='none';
   $('app').style.display='block';
   $('user-email').textContent=user.email;
+  const fl=$('feedback-link');
+  if(fl) fl.href=`/feedback?email=${encodeURIComponent(user.email)}`;
 }
 
 /* ─────────────────────────────────────────
@@ -2659,6 +2698,7 @@ async function bootUser(user){
 
   if(window._accessGranted){
     hidePaywall();
+    resetIdleTimer();
     const postLogin=sessionStorage.getItem('nw_post_login');
     if(postLogin==='quick'){
       sessionStorage.removeItem('nw_post_login');
@@ -2715,6 +2755,28 @@ sb.auth.onAuthStateChange(async(event, session) => {
     window.location.hash='';
     showAuth();
   }
+});
+
+// ── Idle session timeout (15 min idle → prompt, 30 min → auto sign out) ──
+let _idleTimer=null,_idleWarnTimer=null;
+const IDLE_WARN_MS=15*60*1000;
+const IDLE_OUT_MS=30*60*1000;
+function resetIdleTimer(){
+  if(!currentUser) return;
+  clearTimeout(_idleTimer);clearTimeout(_idleWarnTimer);
+  const warn=$('idle-warning');if(warn)warn.style.display='none';
+  _idleWarnTimer=setTimeout(()=>{
+    if(!currentUser)return;
+    const w=$('idle-warning');if(w)w.style.display='flex';
+  },IDLE_WARN_MS);
+  _idleTimer=setTimeout(async()=>{
+    if(!currentUser)return;
+    window._explicitSignOut=true;
+    await signOut();
+  },IDLE_OUT_MS);
+}
+['mousemove','keydown','click','scroll','touchstart'].forEach(e=>{
+  document.addEventListener(e,resetIdleTimer,{passive:true});
 });
 
 // Boot on page load — wait for Supabase to be fully ready
