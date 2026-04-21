@@ -4,15 +4,15 @@
 <meta charset="UTF-8"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Equiterra — Track your net worth. Own your data.</title>
+<title>EquiTerra — Track your net worth. Own your data.</title>
 <meta name="description" content="Manual net worth tracking with zero bank connections. No OAuth tokens. No data brokers. Track every account, visualize your progress, and forecast your future."/>
 <meta name="theme-color" content="#1D9E75"/>
-<meta property="og:title" content="Equiterra — Track your net worth. Own your data."/>
+<meta property="og:title" content="EquiTerra — Track your net worth. Own your data."/>
 <meta property="og:description" content="Manual net worth tracking with zero bank connections. Private by default."/>
 <meta property="og:url" content="https://equiterra.app"/>
 <meta property="og:type" content="website"/>
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Equiterra"/>
+<meta name="twitter:title" content="EquiTerra"/>
 <meta name="twitter:description" content="Track your net worth. Own your data. No bank connections."/>
 
 
@@ -249,12 +249,12 @@ function forgotPassword(){
 </script>
 
 <!-- Boot screen — shown while checking session -->
-<div id="boot-screen"><div class="boot-logo">Equiterra</div></div>
+<div id="boot-screen"><div class="boot-logo">EquiTerra</div></div>
 
 <!-- Auth overlay — shown when logged out -->
 <div id="auth-overlay">
   <div class="auth-box">
-    <div class="auth-logo">Equiterra</div>
+    <div class="auth-logo">EquiTerra</div>
     <div class="auth-sub">Your net worth. Your data. Private by default.</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="setAuthTab('login')">Sign in</button>
@@ -313,7 +313,7 @@ function forgotPassword(){
 <div id="app" style="display:none">
   <nav id="sidebar">
     <div id="sidebar-logo">
-      <div class="logo-text">Equiterra</div>
+      <div class="logo-text">EquiTerra</div>
     </div>
     <div id="sidebar-nav">
       <button class="tab active" onclick="switchTab('dashboard')">
@@ -337,10 +337,17 @@ function forgotPassword(){
       <button onclick="signOut()">
         <span style="font-size:13px">↪</span> Sign out
       </button>
+      <a href="mailto:sam.mueller@opsterra.com?subject=EquiTerra Feedback" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;font-size:12px;color:var(--text3);text-decoration:none;border-radius:7px;transition:background .12s;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='var(--bg)';this.style.color='var(--text2)'" onmouseout="this.style.background='transparent';this.style.color='var(--text3)'">
+        <span style="font-size:13px">✉</span> Send feedback
+      </a>
     </div>
   </nav>
 
   <div id="main-content">
+    <div id="trial-banner" style="display:none;background:rgba(133,79,11,0.12);border:1px solid rgba(133,79,11,0.25);border-radius:8px;padding:9px 14px;margin-bottom:12px;display:none;align-items:center;justify-content:space-between;gap:12px;">
+      <span id="trial-banner-text" style="font-size:12px;color:var(--amber);"></span>
+      <a id="trial-banner-link" href="#" target="_blank" style="font-size:12px;font-weight:600;color:var(--amber);text-decoration:none;white-space:nowrap;border:1px solid var(--amber);padding:3px 10px;border-radius:5px;">Upgrade →</a>
+    </div>
     <div id="sync-bar"></div>
     <div id="content-inner">
       <div id="pane-dashboard"></div>
@@ -357,10 +364,10 @@ function forgotPassword(){
 <script>
 
 const DEFAULT_ACCOUNTS=[
-  {cat:'Brokerage',  name:'Fidelity',      liquid:true,  archived:false},
-  {cat:'Savings',    name:'Family Savings', liquid:true,  archived:false},
-  {cat:'Retirement', name:'401K',           liquid:false, archived:false},
-  {cat:'Real Estate',name:'Home Equity',    liquid:false, archived:false},
+  {cat:'Brokerage',  name:'Fidelity',      liquid:true,  archived:false, type:'asset'},
+  {cat:'Savings',    name:'Family Savings', liquid:true,  archived:false, type:'asset'},
+  {cat:'Retirement', name:'401K',           liquid:false, archived:false, type:'asset'},
+  {cat:'Real Estate',name:'Home Equity',    liquid:false, archived:false, type:'asset'},
 ];
 
 let accounts=[], entries=[], currentTab='dashboard', fv={};
@@ -370,7 +377,7 @@ let dashFilter='all', dashFromDate='', dashToDate='', selectedCat=null;
 let editingEntryIdx=null;
 let showActual=true, showForecast=true, momMode='$'; // chart toggles
 
-const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,birthday:'',goalAmount:''};
+const DEFAULT_SETTINGS={forecastYears:3,lookbackMonths:12,birthday:'',goalAmount:'',forecastMethod:'linear',visuals:{lineChart:true,momChart:true,pieChart:true},reminderEnabled:false};
 let settings={...DEFAULT_SETTINGS};
 
 function loadSettings(){
@@ -384,7 +391,10 @@ const fmtD=n=>(n>=0?'+':'')+fmt(n);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
 // Sum ALL values in an entry (active + archived) — keeps totals accurate forever
-const sumE=e=>Object.values(e.values).reduce((a,b)=>a+(b||0),0);
+const sumE=e=>accounts.reduce((s,a)=>{
+  const v=e.values[a.name]||0;
+  return s+(a.type==='liability'?-v:v);
+},0);
 
 const activeAccounts=()=>accounts.filter(a=>!a.archived);
 const archivedAccounts=()=>accounts.filter(a=>a.archived);
@@ -407,6 +417,7 @@ function load(){
     accounts.forEach(a=>{
       if(a.archived===undefined) a.archived=false;
       if(a.liquid===undefined) a.liquid=false;
+      if(a.type===undefined) a.type='asset';
     });
 
     if(accounts.length===0){
@@ -644,7 +655,7 @@ function renderObStep(){
 
   if(obStep===1){
     el.innerHTML=`
-      <div class="ob-title">Welcome to Equiterra 👋</div>
+      <div class="ob-title">Welcome to EquiTerra 👋</div>
       <div class="ob-sub">Let's get your net worth set up in 3 quick steps. We'll walk you through adding your accounts, entering your first values, then you'll see your dashboard come to life.<br><br>This takes about 3 minutes.</div>
       <div class="ob-footer">
         <button class="ob-skip" onclick="hideOnboarding()">Do this later</button>
@@ -704,7 +715,7 @@ function obRemoveAccount(idx){
 }
 
 function obAddAccount(){
-  accounts.push({name:'',cat:'Savings',liquid:false,archived:false});
+  accounts.push({name:'',cat:'Savings',liquid:false,archived:false,type:'asset'});
   renderObStep();
   // Focus the new input
   setTimeout(()=>{
@@ -1030,6 +1041,9 @@ function renderDashCharts(){
 
   const lineCtx=$('dashLineChart');
   if(lineCtx){
+    const vis=settings.visuals||{};
+    lineCtx.closest('.chart-wrap')&&(lineCtx.closest('.chart-wrap').style.display=(vis.lineChart===false)?'none':'');
+    if(vis.lineChart===false){if(dashLineChart){dashLineChart.destroy();dashLineChart=null;}}
     if(dashLineChart){dashLineChart.destroy();dashLineChart=null;}
     const isCat=selectedCat!==null;
     const actualVals=isCat?getCatTimeSeries(selectedCat,fe):fe.map(sumE);
@@ -1085,6 +1099,9 @@ function renderDashCharts(){
   // MoM bar chart
   const momCtx=$('dashMoMChart');
   if(momCtx){
+    const vis=settings.visuals||{};
+    momCtx.closest('.chart-wrap')&&(momCtx.closest('.chart-wrap').style.display=(vis.momChart===false)?'none':'');
+    if(vis.momChart===false){if(dashMoMChart){dashMoMChart.destroy();dashMoMChart=null;}}
     if(dashMoMChart){dashMoMChart.destroy();dashMoMChart=null;}
     // Use only actual filtered entries — never forecast dates
     const md=getMoMData(fe);
@@ -1127,6 +1144,9 @@ function renderDashCharts(){
   // Category pie chart
   const pieCtx=$('dashPieChart');
   if(pieCtx){
+    const vis=settings.visuals||{};
+    pieCtx.closest('[style*="width:180px"]')&&(pieCtx.closest('[style*="width:180px"]').style.display=(vis.pieChart===false)?'none':'');
+    if(vis.pieChart===false){if(dashPieChart){dashPieChart.destroy();dashPieChart=null;}}
     if(dashPieChart){dashPieChart.destroy();dashPieChart=null;}
     const pd=getCatPieData();
     if(pd.length){
@@ -1391,38 +1411,55 @@ function renderManage(){
   const active=activeAccounts();
   const archived=archivedAccounts();
   const noCats=getCats().length===0;
+  const assets=active.filter(a=>a.type!=='liability');
+  const liabilities=active.filter(a=>a.type==='liability');
 
   let html=`<div id="manage-msg"></div>
   <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Changes save automatically. Archive accounts you no longer use — history is always preserved.</p>`;
 
-  /* ── Active accounts ── */
-  if(active.length===0){
-    html+=`<div class="empty" style="padding:20px 0"><p>No active accounts.</p></div>`;
-  }else{
+  const renderAccountRows=(accs)=>accs.map(a=>{
+    const idx=accounts.indexOf(a);
+    return `<div class="mgmt-row" id="mgmt-${idx}">
+      <input type="text" value="${esc(a.name)}" data-idx="${idx}" class="name-inp"
+        onblur="handleNameBlur(this)" onkeydown="if(event.key==='Enter')this.blur()"/>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <select data-idx="${idx}" class="cat-sel" onchange="handleCatChange(this,${idx})">
+          ${catSelectHtml(a.cat)}
+        </select>
+        <input type="text" class="new-cat-inp" id="nci-${idx}" placeholder="New category name"
+          onblur="handleNewCatBlur(this,${idx})" onkeydown="if(event.key==='Enter')this.blur()" style="display:none"/>
+      </div>
+      <div class="liq-wrap">
+        <label class="liq-toggle">
+          <input type="checkbox" ${a.liquid?'checked':''} onchange="toggleLiquid(${idx},this.checked)"/>
+          <span class="liq-slider"></span>
+        </label>
+        <span>${a.liquid?'Yes':'No'}</span>
+      </div>
+      <button class="warn" id="archbtn-${idx}" onclick="archiveAccount(${idx})">Archive</button>
+    </div>`;
+  }).join('');
+
+  /* ── Assets ── */
+  html+=`<div class="section-label">Assets</div>`;
+  if(assets.length===0){
+    html+=`<div class="empty" style="padding:12px 0"><p>No asset accounts.</p></div>`;
+  } else {
     html+=`<div class="mgmt-header"><span>Account name</span><span>Category</span><span>Liquid</span><span></span></div>`;
-    accounts.forEach((a,idx)=>{
-      if(a.archived)return;
-      html+=`<div class="mgmt-row" id="mgmt-${idx}">
-        <input type="text" value="${esc(a.name)}" data-idx="${idx}" class="name-inp"
-          onblur="handleNameBlur(this)" onkeydown="if(event.key==='Enter')this.blur()"/>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <select data-idx="${idx}" class="cat-sel" onchange="handleCatChange(this,${idx})">
-            ${catSelectHtml(a.cat)}
-          </select>
-          <input type="text" class="new-cat-inp" id="nci-${idx}" placeholder="New category name"
-            onblur="handleNewCatBlur(this,${idx})" onkeydown="if(event.key==='Enter')this.blur()" style="display:none"/>
-        </div>
-        <div class="liq-wrap">
-          <label class="liq-toggle">
-            <input type="checkbox" ${a.liquid?'checked':''} onchange="toggleLiquid(${idx},this.checked)"/>
-            <span class="liq-slider"></span>
-          </label>
-          <span>${a.liquid?'Yes':'No'}</span>
-        </div>
-        <button class="warn" id="archbtn-${idx}" onclick="archiveAccount(${idx})">Archive</button>
-      </div>`;
-    });
+    html+=renderAccountRows(assets);
   }
+  html+=`<div style="margin-top:8px"><button class="ghost" style="font-size:12px;padding:5px 12px" onclick="addAccountOfType('asset')">+ Add asset</button></div>`;
+
+  /* ── Liabilities ── */
+  html+=`<div class="section-label" style="margin-top:24px">Liabilities</div>`;
+  html+=`<p style="font-size:12px;color:var(--text2);margin-bottom:8px">Liabilities (mortgage, loans, credit cards) are subtracted from your net worth.</p>`;
+  if(liabilities.length===0){
+    html+=`<div class="empty" style="padding:12px 0"><p>No liability accounts.</p></div>`;
+  } else {
+    html+=`<div class="mgmt-header"><span>Account name</span><span>Category</span><span>Liquid</span><span></span></div>`;
+    html+=renderAccountRows(liabilities);
+  }
+  html+=`<div style="margin-top:8px"><button class="ghost" style="font-size:12px;padding:5px 12px" onclick="addAccountOfType('liability')">+ Add liability</button></div>`;
 
   /* ── Archived accounts ── */
   if(archived.length>0){
@@ -1445,21 +1482,27 @@ function renderManage(){
     html+=`<div style="border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;height:0"></div>`;
   }
 
-  /* ── Add new account ── */
-  html+=`<div class="section-label" style="margin-top:24px">Add new account</div>
-  <div class="add-form">
-    <div class="add-row">
-      <input type="text" id="new-name" placeholder="Account name" onkeydown="if(event.key==='Enter')addAccount()"/>
-      <select id="new-cat-sel" onchange="toggleAddCat(this)">${catSelectHtml('')}</select>
-    </div>
-    <div id="add-new-cat-wrap" style="${noCats?'':'display:none'}">
-      <input type="text" id="new-cat-name" placeholder="New category name" style="width:100%" onkeydown="if(event.key==='Enter')addAccount()"/>
-    </div>
-    <div><button class="primary" onclick="addAccount()">Add account</button></div>
-  </div>`;
+  /* ── Archived accounts ── */
+  if(archived.length>0){
+    html+=`<div class="section-label" style="margin-top:24px">Archived accounts</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Hidden from entry. All history preserved.</p>
+    <div class="mgmt-header" style="border-radius:8px 8px 0 0"><span>Account name</span><span>Last value</span><span></span></div>`;
+    archived.forEach((a,_)=>{
+      const idx=accounts.indexOf(a);
+      const lv=lastVal(a.name);
+      html+=`<div class="mgmt-row archived-row" id="mgmt-${idx}">
+        <span style="font-size:13px;color:var(--text2)">${esc(a.name)} <span class="badge badge-archived">archived</span></span>
+        <span style="font-size:13px;font-family:var(--mono);color:var(--text2)">${fmt(lv)}</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="ghost" onclick="restoreAccount(${idx})">Restore</button>
+          <button class="danger" id="permdelb-${idx}" onclick="permDelete(${idx})">Delete</button>
+        </div>
+      </div>`;
+    });
+    html+=`<div style="border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;height:0"></div>`;
+  }
 
   el.innerHTML=html;
-  if(noCats){const w=$('add-new-cat-wrap');if(w)w.style.display='block';}
 }
 
 function showMsg(html,ms=3500){
@@ -1576,22 +1619,23 @@ function permDelete(idx){
 }
 
 /* ── Add new account ── */
-function addAccount(){
-  const nameEl=$('new-name'),catSel=$('new-cat-sel'),ncEl=$('new-cat-name');
-  const name=(nameEl?.value||'').trim();
-  const catVal=catSel?.value||'';
-  const cat=catVal==='__new__'?((ncEl?.value||'').trim()):catVal;
-  if(nameEl)nameEl.style.borderColor='';
-  if(ncEl)ncEl.style.borderColor='';
-  if(!name){if(nameEl)nameEl.style.borderColor='var(--red)';return;}
-  if(!cat){if(ncEl)ncEl.style.borderColor='var(--red)';return;}
-  if(accounts.some(a=>a.name===name)){
-    showMsg(`<div class="msg err">"${esc(name)}" already exists.</div>`,4000);return;
+function addAccountOfType(type){
+  const name=prompt(`New ${type} account name:`);
+  if(!name||!name.trim()) return;
+  const trimmed=name.trim();
+  if(accounts.some(a=>a.name===trimmed)){
+    showMsg(`<div class="msg err">"${esc(trimmed)}" already exists.</div>`,4000);return;
   }
-  accounts.push({cat,name,archived:false,liquid:false});
+  const cats=getCats();
+  const cat=cats.length?cats[0]:'General';
+  accounts.push({cat,name:trimmed,archived:false,liquid:false,type});
   persistAccounts();fv={};
   renderManage();
-  showMsg(`<div class="msg ok">"${esc(name)}" added to ${esc(cat)}.</div>`);
+  showMsg(`<div class="msg ok">"${esc(trimmed)}" added as ${type}.</div>`);
+}
+
+function addAccount(){
+  addAccountOfType('asset');
 }
 
 /* ─────────────────────────────────────────
@@ -1683,7 +1727,6 @@ function dateToAge(dateStr){
 function getForecastDatasets(fe,color){
   if(!fe.length||!settings.forecastYears||settings.forecastYears<=0) return [];
 
-  // Determine lookback window
   const lastEntry=fe[fe.length-1];
   const lastDay=dateToDay(lastEntry.date);
   const lookbackDays=settings.lookbackMonths*30.44;
@@ -1692,23 +1735,55 @@ function getForecastDatasets(fe,color){
   if(window.length<2) return [];
 
   const points=window.map(e=>({x:dateToDay(e.date),y:sumE(e)}));
-  const reg=linReg(points);
-  if(!reg) return [];
-
-  // Generate forecast points monthly
   const forecastDays=Math.round(settings.forecastYears*365);
   const stepDays=30;
   const forecastLabels=[];
   const forecastVals=[];
+  const method=settings.forecastMethod||'linear';
 
-  // Start from last actual point
-  for(let d=0;d<=forecastDays;d+=stepDays){
-    const day=lastDay+d;
-    const val=reg.m*day+reg.b;
-    if(val<0) break; // don't project negative net worth
-    const date=new Date(day*1000*60*60*24);
-    forecastLabels.push(date.toISOString().split('T')[0]);
-    forecastVals.push(Math.round(val));
+  if(method==='linear'){
+    const reg=linReg(points);
+    if(!reg) return [];
+    for(let d=0;d<=forecastDays;d+=stepDays){
+      const day=lastDay+d;
+      const val=reg.m*day+reg.b;
+      if(val<0) break;
+      const date=new Date(day*1000*60*60*24);
+      forecastLabels.push(date.toISOString().split('T')[0]);
+      forecastVals.push(Math.round(val));
+    }
+  } else if(method==='compound'){
+    // Compound annual growth rate from first to last in window
+    const first=points[0], last=points[points.length-1];
+    const years=(last.x-first.x)/365;
+    if(years<=0||first.y<=0) return [];
+    const cagr=Math.pow(last.y/first.y,1/years)-1;
+    const startVal=sumE(lastEntry);
+    for(let d=0;d<=forecastDays;d+=stepDays){
+      const yr=d/365;
+      const val=startVal*Math.pow(1+cagr,yr);
+      if(val<0) break;
+      const date=new Date((lastDay+d)*1000*60*60*24);
+      forecastLabels.push(date.toISOString().split('T')[0]);
+      forecastVals.push(Math.round(val));
+    }
+  } else if(method==='moving'){
+    // Moving average: average monthly change over lookback
+    const changes=[];
+    for(let i=1;i<points.length;i++){
+      const days=points[i].x-points[i-1].x;
+      if(days>0) changes.push((points[i].y-points[i-1].y)/days);
+    }
+    if(!changes.length) return [];
+    const avgDailyChange=changes.reduce((s,c)=>s+c,0)/changes.length;
+    const startVal=sumE(lastEntry);
+    for(let d=0;d<=forecastDays;d+=stepDays){
+      const val=startVal+avgDailyChange*d;
+      if(val<0) break;
+      const date=new Date((lastDay+d)*1000*60*60*24);
+      forecastLabels.push(date.toISOString().split('T')[0]);
+      forecastVals.push(Math.round(val));
+    }
   }
 
   if(!forecastLabels.length) return [];
@@ -1750,6 +1825,18 @@ function renderSettings(){
 
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)">
       <div>
+        <p style="font-size:13px;font-weight:500">Forecast method</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:2px">How future values are projected</p>
+      </div>
+      <select id="s-forecast-method" onchange="saveSetting('forecastMethod',this.value)" style="font-size:13px;padding:6px 10px">
+        <option value="linear"${settings.forecastMethod==='linear'?' selected':''}>Linear trend</option>
+        <option value="compound"${settings.forecastMethod==='compound'?' selected':''}>Compound growth (CAGR)</option>
+        <option value="moving"${settings.forecastMethod==='moving'?' selected':''}>Moving average</option>
+      </select>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)">
+      <div>
         <p style="font-size:13px;font-weight:500">Forecast years</p>
         <p style="font-size:12px;color:var(--text2);margin-top:2px">How far into the future to project</p>
       </div>
@@ -1771,6 +1858,25 @@ function renderSettings(){
         ${lbOptions.map(([v,l])=>`<option value="${v}"${settings.lookbackMonths===v?' selected':''}>${l}</option>`).join('')}
       </select>
     </div>
+  </div>
+
+  <div class="section-label" style="margin-top:20px">Dashboard visuals</div>
+  <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+    ${[
+      ['lineChart','Net worth chart','The main line chart showing net worth over time'],
+      ['momChart','Month-over-month chart','Bar chart showing monthly changes'],
+      ['pieChart','Category allocation','Donut chart showing breakdown by category'],
+    ].map(([key,label,desc],i)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--bg);${i>0?'border-top:1px solid var(--border)':''}">
+      <div>
+        <p style="font-size:13px;font-weight:500">${label}</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:1px">${desc}</p>
+      </div>
+      <label class="liq-toggle" style="flex-shrink:0">
+        <input type="checkbox" ${(settings.visuals||{})[key]!==false?'checked':''} onchange="saveVisualToggle('${key}',this.checked)"/>
+        <span class="liq-slider"></span>
+      </label>
+    </div>`).join('')}
   </div>
 
   <div class="section-label" style="margin-top:20px">Personal</div>
@@ -1971,6 +2077,13 @@ async function saveReminderSetting(enabled){
   } catch(e){console.error('Save reminder error:',e);}
 }
 
+function saveVisualToggle(key,val){
+  if(!settings.visuals) settings.visuals={lineChart:true,momChart:true,pieChart:true};
+  settings.visuals[key]=val;
+  persistSettings();
+  if(currentTab==='dashboard') renderDashCharts();
+}
+
 function saveSetting(key,val){
   settings[key]=val;
   persistSettings();
@@ -2096,7 +2209,7 @@ function showAuth(){
   const box=document.querySelector('.auth-box');
   if(box && !$('auth-email')){
     box.innerHTML=`
-      <div class="auth-logo">Equiterra</div>
+      <div class="auth-logo">EquiTerra</div>
       <div class="auth-sub">Your net worth. Your data. Private by default.</div>
       <div class="auth-tabs">
         <button class="auth-tab active" onclick="setAuthTab('login')">Sign in</button>
@@ -2279,7 +2392,7 @@ async function loadFromSupabase(){
     // Load settings
       const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
       if(accts&&accts.length>0){
-      accounts=accts.map(a=>({name:a.name,cat:a.category,liquid:a.liquid,archived:a.archived,_id:a.id}));
+      accounts=accts.map(a=>({name:a.name,cat:a.category,liquid:a.liquid,archived:a.archived,type:a.account_type||'asset',_id:a.id}));
     } else {
       // First time user — use defaults locally, save in background
       accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
@@ -2316,6 +2429,8 @@ async function loadFromSupabase(){
       lookbackMonths:s?.lookback_months||12,
       birthday:s?.birthday||'',
       goalAmount:s?.goal_amount||'',
+      forecastMethod:s?.forecast_method||'linear',
+      visuals:s?.visuals||{lineChart:true,momChart:true,pieChart:true},
       reminderEnabled:s?.reminder_enabled||false
     };
 
@@ -2339,11 +2454,15 @@ async function loadFromSupabase(){
     window._accessGranted=true;
     $('app').style.display='block';
     hidePaywall();
-    // Show trial countdown in topbar
-    if(access.status==='trialing'&&access.daysLeft!==null){
-      const bar=$('sync-bar');
-      if(bar){
-        bar.innerHTML=`<span style="color:var(--amber)">Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} left — <a href="https://equiterra.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c" target="_blank" style="color:var(--amber);text-decoration:underline">Upgrade</a></span>`;
+    // Show trial banner
+    const banner=$('trial-banner');
+    if(banner){
+      if(access.status==='trialing'&&access.daysLeft!==null){
+        $('trial-banner-text').textContent=`Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} remaining`;
+        $('trial-banner-link').href='https://equiterra.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c';
+        banner.style.display='flex';
+      } else {
+        banner.style.display='none';
       }
     }
 
@@ -2378,6 +2497,7 @@ async function saveAccountsToSupabase(){
       category:a.cat,
       liquid:a.liquid||false,
       archived:a.archived||false,
+      account_type:a.type||'asset',
       sort_order:i
     }));
     const {error}=await sb.from('accounts').insert(rows);
@@ -2423,6 +2543,8 @@ async function saveSettingsToSupabase(){
       lookback_months:settings.lookbackMonths,
       birthday:settings.birthday||null,
       goal_amount:settings.goalAmount||null,
+      forecast_method:settings.forecastMethod||'linear',
+      visuals:settings.visuals||null,
       updated_at:new Date().toISOString()
     },{onConflict:'user_id'});
   } catch(e){console.error('Save settings error:',e);}
@@ -2553,6 +2675,13 @@ async function bootUser(user){
 // Re-check access when user returns to the tab
 document.addEventListener('visibilitychange',async()=>{
   if(document.visibilityState==='visible'&&currentUser&&!window._paywallActive){
+    // Check if session is still valid (30-day timeout)
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){
+      window._explicitSignOut=true;
+      await signOut();
+      return;
+    }
     const {data:s}=await sb.from('user_settings').select('subscription_status,trial_start').eq('user_id',currentUser.id).maybeSingle();
     if(s){
       const access=checkAccess(s);
@@ -2615,7 +2744,7 @@ function showResetPassword(){
   const box = document.querySelector('.auth-box');
   if(box){
     box.innerHTML=`
-      <div class="auth-logo">Equiterra</div>
+      <div class="auth-logo">EquiTerra</div>
       <div class="auth-sub">Set a new password for your account.</div>
       <div class="auth-field"><label>New password</label><input type="password" id="reset-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitReset()"/></div>
       <div class="auth-field"><label>Confirm password</label><input type="password" id="reset-pw2" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitReset()"/></div>
