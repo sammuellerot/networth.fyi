@@ -56,7 +56,7 @@ export default async function handler(req, res) {
   let subscriptionStatus = 'trialing';
 
   if (eventName === 'order_created') {
-    // One-time lifetime purchase
+    // Annual subscription purchase
     subscriptionStatus = 'active';
   } else if (eventName === 'subscription_created' || eventName === 'subscription_updated') {
     if (status === 'active') subscriptionStatus = 'active';
