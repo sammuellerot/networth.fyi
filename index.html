@@ -19,7 +19,7 @@
 
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&family=Barlow:wght@400;500;600&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;scrollbar-width:none;-ms-overflow-style:none;}
   *::-webkit-scrollbar{display:none;}
   /* ── Auth overlay ── */
@@ -53,23 +53,15 @@
   /* ── Sync status ── */
   #sync-bar{font-size:11px;color:var(--text2);text-align:right;margin-bottom:8px;min-height:14px;}
   :root{
-    --bg:#f9f8f6;--bg2:#f1efe9;--bg3:#e8e4db;
-    --text:#1e1c18;--text2:#6b6760;--text3:#a09c97;
-    --border:rgba(30,28,24,0.1);--border2:rgba(30,28,24,0.18);
+    --bg:#ffffff;--bg2:#f7f7f5;--bg3:#eeecea;
+    --text:#1a1917;--text2:#6a6762;--text3:#a8a5a2;
+    --border:rgba(26,25,23,0.09);--border2:rgba(26,25,23,0.16);
     --green:#2d7a5f;--red:#b03a2e;--amber:#8a5e0a;
-    --accent:#4a5fa8;--accent-dim:rgba(74,95,168,0.08);
+    --accent:#4a5fa8;--accent-dim:rgba(74,95,168,0.07);
     --radius:10px;--radius-sm:7px;
-    --mono:'JetBrains Mono','Courier New',monospace;
+    --mono:'Barlow',sans-serif;
   }
-  @media(prefers-color-scheme:dark){
-    :root{
-      --bg:#16140f;--bg2:#1e1b14;--bg3:#252118;
-      --text:#f0ede6;--text2:#8c8880;--text3:#5c5952;
-      --border:rgba(240,237,230,0.08);--border2:rgba(240,237,230,0.14);
-      --green:#5db896;--red:#e07a6a;--amber:#d4952a;
-      --accent:#7b91d4;--accent-dim:rgba(123,145,212,0.1);
-    }
-  }
+  /* Dark mode disabled — light only */
   html,body{scrollbar-width:none;-ms-overflow-style:none;}
   html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;}
   body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0;min-height:100vh;}
@@ -1308,7 +1300,7 @@ function renderDash(){
 }
 
 function renderDashCharts(){
-  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const dark=false; // light mode only
   const tickColor=dark?'#888':'#666',gridColor=dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
   const fe=getFilteredEntries();
 
@@ -1926,7 +1918,7 @@ function onInput(inp){
   // Row highlight — green tint if value entered, neutral if blank
   const rowEl=inp.dataset.rowid?$(inp.dataset.rowid):null;
   if(rowEl){
-    const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+    const dark=false; // light mode only
     rowEl.style.background=val>0?(dark?'rgba(29,158,117,0.08)':'rgba(29,158,117,0.05)'):'var(--bg)';
   }
 
