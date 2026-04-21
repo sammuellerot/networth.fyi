@@ -1057,6 +1057,7 @@ function renderDashCharts(){
     const showActualLine = isCat ? true : showActual;
     const forecast=(!isCat&&showForecast)?getForecastDatasets(fe,color):null;
     const hasForecast=forecast&&forecast.labels&&forecast.labels.length>1;
+    console.log('[CHART] showForecast:',showForecast,'hasForecast:',hasForecast,'forecast:',forecast);
 
     // Build label set based on what's visible
     let allLabels;
@@ -1726,14 +1727,15 @@ function dateToAge(dateStr){
 }
 
 function getForecastDatasets(fe,color){
-  if(!fe.length||!settings.forecastYears||settings.forecastYears<=0) return [];
+  if(!fe.length||!settings.forecastYears||settings.forecastYears<=0){console.log('[FC] early exit');return [];}
 
   const lastEntry=fe[fe.length-1];
   const lastDay=dateToDay(lastEntry.date);
   const lookbackDays=settings.lookbackMonths*30.44;
   const cutoffDay=lastDay-lookbackDays;
   const window=fe.filter(e=>dateToDay(e.date)>=cutoffDay);
-  if(window.length<2) return [];
+  console.log('[FC] method:',settings.forecastMethod,'window:',window.length,'entries');
+  if(window.length<2){console.log('[FC] not enough data');return [];}
 
   const points=window.map(e=>({x:dateToDay(e.date),y:sumE(e)}));
   const forecastDays=Math.round(settings.forecastYears*365);
@@ -1789,8 +1791,8 @@ function getForecastDatasets(fe,color){
 
   if(!forecastLabels.length) return [];
 
-  // Prepend last actual value so lines connect
-  const connectVal=Math.round(reg.m*lastDay+reg.b);
+  // Use first forecast value as the connect point (already computed from last actual)
+  const connectVal=forecastVals[0];
 
   return {
     labels:forecastLabels,
