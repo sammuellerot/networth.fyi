@@ -510,9 +510,19 @@ function filterUI_inline(){
 function setCustomFrom(v){dashFilter='custom';dashFromDate=v;renderDash();}
 function setCustomTo(v){dashFilter='custom';dashToDate=v;renderDash();}
 
-function toggleActual(){showActual=!showActual;renderDash();}
-function toggleForecast(){showForecast=!showForecast;renderDash();}
-function setMomMode(m){momMode=m;renderDash();}
+function toggleActual(){showActual=!showActual;updatePills();renderDashCharts();}
+function toggleForecast(){showForecast=!showForecast;updatePills();renderDashCharts();}
+function setMomMode(m){momMode=m;updatePills();renderDashCharts();}
+
+function updatePills(){
+  document.querySelectorAll('[data-pill]').forEach(b=>{
+    const key=b.dataset.pill;
+    const active=(key==='actual'&&showActual)||(key==='forecast'&&showForecast)||(key==='$'&&momMode==='$')||(key==='%'&&momMode==='%');
+    b.style.background=active?'#1D9E75':'transparent';
+    b.style.color=active?'#fff':'var(--text2)';
+    b.style.borderColor=active?'#1D9E75':'var(--border2)';
+  });
+}
 
 function getFilteredEntries(){
   if(!entries.length) return entries;
@@ -1108,7 +1118,7 @@ function renderDash(){
     }
     catHtml+=`</div></div>`;
 
-    const pillBtn=(label,active,fn)=>`<button onclick="${fn}" data-pill style="padding:3px 12px;font-size:11px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid ${active?'#1D9E75':'var(--border2)'};background:${active?'#1D9E75':'transparent'};color:${active?'#fff':'var(--text2)'};transition:all .15s">${label}</button>`;
+    const pillBtn=(label,active,fn,key='')=>`<button onclick="${fn}" data-pill="${key}" style="padding:3px 12px;font-size:11px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid ${active?'#1D9E75':'var(--border2)'};background:${active?'#1D9E75':'transparent'};color:${active?'#fff':'var(--text2)'};transition:all .15s">${label}</button>`;
 
     // Build widgets in fixed order: line → cat table → pie → mom
     const widgets={
@@ -1116,8 +1126,8 @@ function renderDash(){
         <span class="drag-handle" title="Drag to reorder">⠿</span>
         <div class="section-label" style="margin-top:0">Net worth over time</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:10px;margin-left:auto;justify-content:flex-end">
-          ${pillBtn('Net worth',showActual,"toggleActual()")}
-          ${pillBtn('Forecast',showForecast,"toggleForecast()")}
+          ${pillBtn('Net worth',showActual,"toggleActual()",'actual')}
+          ${pillBtn('Forecast',showForecast,"toggleForecast()",'forecast')}
         </div>
         <div class="chart-wrap" style="height:240px"><canvas id="dashLineChart" role="img" aria-label="Net worth over time">Net worth over time.</canvas></div>
       </div>`,
@@ -1137,8 +1147,8 @@ function renderDash(){
         <span class="drag-handle" title="Drag to reorder">⠿</span>
         <div class="section-label">Month-over-month change</div>
         <div style="display:flex;gap:5px;margin-bottom:10px">
-          ${pillBtn('$',momMode==='$',"setMomMode('$')")}
-          ${pillBtn('%',momMode==='%',"setMomMode('%')")}
+          ${pillBtn('$',momMode==='$',"setMomMode('$')","$")}
+          ${pillBtn('%',momMode==='%',"setMomMode('%')","%" )}
         </div>
         <div class="chart-wrap" style="height:220px"><canvas id="dashMoMChart" role="img" aria-label="Month over month net worth change">Monthly change.</canvas></div>
       </div>`
@@ -1224,14 +1234,6 @@ function renderDashCharts(){
   const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   const tickColor=dark?'#888':'#666',gridColor=dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
   const fe=getFilteredEntries();
-
-  // Update pill button states if they exist (without re-rendering whole dash)
-  document.querySelectorAll('[data-pill]').forEach(b=>{
-    const active=(b.dataset.pill==='actual'&&showActual)||(b.dataset.pill==='forecast'&&showForecast)||(b.dataset.pill===momMode);
-    b.style.background=active?'#1D9E75':'transparent';
-    b.style.color=active?'#fff':'var(--text2)';
-    b.style.borderColor=active?'#1D9E75':'var(--border2)';
-  });
 
   const vis=settings.visuals||{};
 
