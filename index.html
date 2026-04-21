@@ -2182,17 +2182,21 @@ async function importCSV(input){
     if(headers[0].toLowerCase()!=='date'){throw new Error('First column must be "Date".');}
     const accs=headers.slice(1);
 
-    // Validate accounts exist
+    // Auto-create any missing accounts
     const knownAccs=new Set(accounts.map(a=>a.name));
-    const missing=accs.filter(a=>!knownAccs.has(a));
-    if(missing.length>0){
-      // Auto-add missing accounts
-      missing.forEach(name=>{
-        if(!accounts.find(a=>a.name===name)){
-          accounts.push({name,cat:'Other',liquid:false,archived:false});
-        }
-      });
+    const newAccounts=[];
+    accs.forEach(name=>{
+      if(!knownAccs.has(name)){
+        const newAcc={name,cat:'Imported',liquid:false,archived:false,type:'asset'};
+        accounts.push(newAcc);
+        newAccounts.push(name);
+      }
+    });
+
+    if(newAccounts.length>0){
+      if(msg) msg.innerHTML='<span style="color:var(--text2)">Creating accounts...</span>';
       persistAccounts();
+      if(currentUser) await saveAccountsToSupabase();
     }
 
     // Parse rows
@@ -2216,7 +2220,7 @@ async function importCSV(input){
     entries.sort((a,b)=>a.date<b.date?-1:1);
     persist();
 
-    // Save to Supabase
+    // Save entries to Supabase
     if(msg) msg.innerHTML='<span style="color:var(--text2)">Saving to cloud...</span>';
     if(currentUser){
       for(const e of entries){
@@ -2224,9 +2228,10 @@ async function importCSV(input){
       }
     }
 
-    if(msg) msg.innerHTML=`<div class="msg ok">Imported ${imported} entries${skipped>0?` (${skipped} skipped)`:''}. Redirecting to dashboard...</div>`;
+    const accsNote=newAccounts.length>0?` Created ${newAccounts.length} new account${newAccounts.length===1?'':'s'} (${newAccounts.slice(0,3).join(', ')}${newAccounts.length>3?'…':''}).`:'';
+    if(msg) msg.innerHTML=`<div class="msg ok">Imported ${imported} entr${imported===1?'y':'ies'}${skipped>0?` (${skipped} skipped)`:''}${accsNote} Redirecting to dashboard...</div>`;
     input.value='';
-    setTimeout(()=>switchTab('dashboard'),1500);
+    setTimeout(()=>switchTab('dashboard'),1800);
   } catch(e){
     console.error('Import error:',e);
     if(msg) msg.innerHTML=`<div class="msg err">${e.message||'Import failed. Check your file format.'}</div>`;
