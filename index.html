@@ -96,92 +96,53 @@
   .dash-top{display:grid;grid-template-columns:200px 1fr;gap:16px;margin-bottom:24px;align-items:start;}
   .dash-top .cards{display:flex;flex-direction:column;gap:8px;margin-bottom:0;}
   /* ── Mobile ── */
+  .ham-line{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;transition:all .2s;}
   /* ── Mobile ── */
   @media(max-width:768px){
-    /* Layout */
     #app{flex-direction:column;}
     #sidebar{width:100%;min-height:auto;position:sticky;top:0;flex-direction:column;border-right:none;border-bottom:1px solid var(--border);z-index:20;}
-    #sidebar-logo{padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:none;margin-bottom:0;}
+    #sidebar-logo{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:none;margin-bottom:0;}
     #sidebar-logo .logo-text{font-size:18px;}
     #sidebar-logo .logo-sub{display:none;}
-    #sidebar-nav{display:flex;flex-direction:row;padding:4px 8px 6px;overflow-x:auto;gap:2px;border-top:1px solid var(--border);-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-    #sidebar-nav::-webkit-scrollbar{display:none;}
+    #sidebar-nav{display:none;}
     #sidebar-footer{display:none;}
-    .tab{white-space:nowrap;padding:6px 12px;font-size:12px;gap:6px;border-radius:20px;margin-bottom:0;}
-    .tab .tab-icon{font-size:13px;width:auto;}
-
-    /* Main content */
+    #hamburger-btn{display:flex !important;}
+    .tab{padding:9px 12px;font-size:13px;gap:8px;border-radius:8px;margin-bottom:2px;width:100%;white-space:normal;}
     #main-content{margin-left:0;padding:12px 14px;min-width:0;}
     #content-inner{max-width:100%;}
-
-    /* Trial banner */
     #trial-banner{flex-direction:column;align-items:flex-start;gap:8px;padding:8px 12px;}
-
-    /* Cards - 2 col on mobile */
     .cards,.cards-few{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
     .card{padding:12px;}
     .card-value{font-size:17px;}
-
-    /* Filter bar */
     .filter-bar{gap:4px;padding:8px 10px;margin-bottom:14px;}
     .filter-bar-label{display:none;}
-
-    /* Charts */
     .chart-wrap{height:180px !important;}
     .dash-widget{margin-bottom:16px !important;}
-
-    /* Pie chart - stack vertically */
-    .dash-widget [style*="width:180px"]{width:140px !important;height:140px !important;}
-
-    /* Category table */
     .list-row{padding:8px 10px !important;}
-
-    /* Manage accounts - hide header, stack row */
     .mgmt-header{display:none;}
     .mgmt-row{flex-wrap:wrap;gap:8px;padding:10px;}
     .mgmt-row .name-inp{width:100%;}
-
-    /* Entry form */
     .entry-bar{flex-wrap:wrap;gap:10px;}
     .entry-bar .field{flex:1;min-width:120px;}
-
-    /* Auth */
     .auth-box{padding:24px 20px;margin:16px;}
     .auth-logo{font-size:22px;}
-
-    /* Onboarding */
     .onboarding-box{padding:24px 18px;margin:16px;}
-
-    /* Idle warning */
     #idle-warning > div{margin:16px;padding:24px 20px;}
-
-    /* Quick entry */
     .qe-box{margin:16px;}
-
-    /* Hide drag handles on touch */
     .drag-handle{display:none;}
-
-    /* Section labels */
     .section-label{margin-top:14px !important;}
-
-    /* Settings number inputs */
     #pane-settings input[type=number]{width:60px !important;}
-
-    /* Dash top layout */
     .dash-top{grid-template-columns:1fr;}
   }
-
+  @media(max-width:500px){
+    .cards,.cards-few{grid-template-columns:repeat(2,1fr) !important;}
+  }
   /* Tablet tweaks */
   @media(max-width:900px) and (min-width:769px){
     #main-content{padding:20px 24px;}
     #content-inner{max-width:100%;}
   }
-  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
-  @media(max-width:500px){
-    .cards,.cards-few{grid-template-columns:repeat(2,1fr) !important;}
-  }
-  .cards-few{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;max-width:calc(66.66% + 10px);}
-  .filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:20px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);}
+    .filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:20px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);}
   .filter-bar-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-right:4px;}
   .filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);}
   .dash-widget{position:relative;border-radius:var(--radius-sm);}
@@ -408,6 +369,11 @@ function forgotPassword(){
   <nav id="sidebar">
     <div id="sidebar-logo">
       <div class="logo-text">EquiTerra</div>
+      <button id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu" style="display:none;background:transparent;border:none;cursor:pointer;padding:6px;color:var(--text);flex-direction:column;gap:5px;">
+        <span class="ham-line"></span>
+        <span class="ham-line"></span>
+        <span class="ham-line"></span>
+      </button>
     </div>
     <div id="sidebar-nav">
       <button class="tab active" onclick="switchTab('dashboard')">
@@ -436,6 +402,28 @@ function forgotPassword(){
       </a>
     </div>
   </nav>
+
+  <!-- Mobile menu overlay -->
+  <div id="mobile-menu" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:rgba(0,0,0,0.5);" onclick="closeMobileMenu()">
+    <div style="position:absolute;top:0;right:0;width:240px;height:100%;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;padding:0;" onclick="event.stopPropagation()">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:18px;">EquiTerra</span>
+        <button onclick="closeMobileMenu()" style="background:transparent;border:none;cursor:pointer;font-size:20px;color:var(--text2);line-height:1;padding:4px;">✕</button>
+      </div>
+      <div style="flex:1;padding:8px 10px;overflow-y:auto;">
+        <button class="tab" id="mob-tab-dashboard" onclick="switchTab('dashboard');closeMobileMenu()"><span class="tab-icon">◎</span> Dashboard</button>
+        <button class="tab" id="mob-tab-enter" onclick="switchTab('enter');closeMobileMenu()"><span class="tab-icon">＋</span> Entry</button>
+        <button class="tab" id="mob-tab-history" onclick="switchTab('history');closeMobileMenu()"><span class="tab-icon">≡</span> History</button>
+        <button class="tab" id="mob-tab-manage" onclick="switchTab('manage');closeMobileMenu()"><span class="tab-icon">⊞</span> Accounts</button>
+        <button class="tab" id="mob-tab-settings" onclick="switchTab('settings');closeMobileMenu()"><span class="tab-icon">⚙</span> Settings</button>
+      </div>
+      <div style="padding:12px 10px;border-top:1px solid var(--border);">
+        <span id="mob-user-email" style="font-size:11px;color:var(--text2);padding:0 4px;margin-bottom:6px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <a href="/feedback" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;font-size:12px;color:var(--text2);text-decoration:none;border-radius:7px;font-family:'DM Sans',sans-serif;">✉ Send feedback</a>
+        <button onclick="signOut()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;font-size:12px;background:transparent;border:none;border-radius:7px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text2);">↪ Sign out</button>
+      </div>
+    </div>
+  </div>
 
   <div id="main-content">
     <div id="trial-banner" style="display:none;background:rgba(133,79,11,0.12);border:1px solid rgba(133,79,11,0.25);border-radius:8px;padding:9px 14px;margin-bottom:12px;display:none;align-items:center;justify-content:space-between;gap:12px;">
@@ -526,10 +514,21 @@ function initFV(){
   activeAccounts().forEach(a=>{fv[a.name]=last?(last.values[a.name]||0):0;});
 }
 
+function toggleMobileMenu(){
+  const menu=$('mobile-menu');
+  if(menu) menu.style.display=menu.style.display==='none'?'block':'none';
+}
+function closeMobileMenu(){
+  const menu=$('mobile-menu');
+  if(menu) menu.style.display='none';
+}
+
 function switchTab(t){
   if(window._paywallActive) return;
   const TABS=['dashboard','enter','history','manage','settings'];
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',TABS[i]===t));
+  // Sync mobile menu tab active states
+  TABS.forEach(name=>{const b=$('mob-tab-'+name);if(b)b.classList.toggle('active',name===t);});
   TABS.forEach(name=>$('pane-'+name).style.display=name===t?'block':'none');
   if(t==='enter'&&currentTab!=='enter')fv={};
   currentTab=t;
@@ -2746,7 +2745,7 @@ function showApp(user){
   currentUser=user;
   $('auth-overlay').style.display='none';
   $('app').style.display='block';
-  $('user-email').textContent=user.email;
+  $('user-email').textContent=user.email;const _mue=$('mob-user-email');if(_mue)_mue.textContent=user.email;
   const fl=$('feedback-link');
   if(fl) fl.href=`/feedback?email=${encodeURIComponent(user.email)}`;
 }
@@ -3050,7 +3049,7 @@ async function saveEditedEntry(){
 async function bootUser(user){
   currentUser=user;
   $('auth-overlay').style.display='none';
-  $('user-email').textContent=user.email;
+  $('user-email').textContent=user.email;const _mue=$('mob-user-email');if(_mue)_mue.textContent=user.email;
   window._accessGranted=false;
   window._paywallActive=false;
 
