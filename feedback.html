@@ -110,13 +110,20 @@ async function submitFeedback(){
   if(!ok) return;
   const btn=document.getElementById('submit-btn');
   btn.disabled=true;btn.textContent='Sending...';
-  const subject=`[EquiTerra ${t==='bug'?'Bug':'Feature'}] ${title}`;
-  const body=`Type: ${t==='bug'?'Bug Report':'Feature Request'}\nFrom: ${email}${t==='bug'?'\nSeverity: '+sev:''}\n\nSummary: ${title}\n\n${desc}`;
-  window.location.href=`mailto:sam.mueller@opsterra.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  setTimeout(()=>{
+  try{
+    const res=await fetch('/api/feedback',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type:t,email,title,description:desc,severity:sev})
+    });
+    if(!res.ok) throw new Error('Send failed');
     document.getElementById('form-content').style.display='none';
     document.getElementById('success-msg').style.display='block';
-  },600);
+  }catch(e){
+    btn.disabled=false;
+    btn.textContent='Send feedback →';
+    alert('Something went wrong. Please try again.');
+  }
 }
 </script>
 </body>
