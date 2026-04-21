@@ -2064,6 +2064,18 @@ function renderSettings(){
   <div id="settings-msg" style="margin-top:14px"></div>
 
   <div style="margin-top:40px;padding-top:24px;border-top:1px solid var(--border);">
+    <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Change email address</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;">Current: <span style="font-family:var(--mono);color:var(--text)">${esc(currentUser?.email||'')}</span></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">
+      <input type="email" id="new-email-input" placeholder="New email address"
+        style="flex:1;min-width:200px;padding:8px 12px;font-size:13px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none;font-family:inherit"
+        onkeydown="if(event.key==='Enter')changeEmail()"/>
+      <button onclick="changeEmail()" style="padding:8px 16px;font-size:13px;background:var(--green);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;white-space:nowrap">Update email</button>
+    </div>
+    <div id="email-change-msg" style="margin-top:8px;font-size:12px;"></div>
+  </div>
+
+  <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border);">
     <p style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Monthly entry reminder</p>
     <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">Get an email on the 1st of each month with a link that opens directly into Quick Entry.</p>
     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
@@ -2237,6 +2249,29 @@ function saveVisualToggle(key,val){
   settings.visuals[key]=val;
   persistSettings();
   if(currentTab==='dashboard') renderDashCharts();
+}
+
+async function changeEmail(){
+  const input=$('new-email-input');
+  const msg=$('email-change-msg');
+  const newEmail=(input?.value||'').trim();
+  if(msg) msg.textContent='';
+  if(!newEmail||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)){
+    if(msg){msg.style.color='var(--red)';msg.textContent='Please enter a valid email address.';}
+    return;
+  }
+  if(newEmail===currentUser?.email){
+    if(msg){msg.style.color='var(--text2)';msg.textContent='That\'s already your current email.';}
+    return;
+  }
+  try{
+    const {error}=await sb.auth.updateUser({email:newEmail});
+    if(error) throw error;
+    if(msg){msg.style.color='var(--green)';msg.textContent=`Confirmation sent to ${newEmail}. Click the link in that email to confirm the change.`;}
+    if(input) input.value='';
+  }catch(e){
+    if(msg){msg.style.color='var(--red)';msg.textContent=e.message||'Something went wrong.';}
+  }
 }
 
 function saveSetting(key,val){
@@ -2860,6 +2895,11 @@ sb.auth.onAuthStateChange(async(event, session) => {
   if(event === 'PASSWORD_RECOVERY'){
     _recoverySession = session;
     showResetPassword();
+  } else if(event === 'EMAIL_CHANGE' && session?.user){
+    currentUser = session.user;
+    const emailEl=$('user-email');
+    if(emailEl) emailEl.textContent=currentUser.email;
+    if(currentTab==='settings') renderSettings();
   } else if(event === 'SIGNED_OUT' && window._explicitSignOut){
     _recoverySession=null;
     currentUser=null;
