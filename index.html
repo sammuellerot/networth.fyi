@@ -915,15 +915,14 @@ async function qeSave(){
 
 /* ── Dashboard widget drag-and-drop ── */
 const WIDGET_KEYS=['lineChart','momChart','pieChart'];
+const CARD_KEYS=['cardNetWorth','cardSinceLastEntry','cardLastUpdated','cardLiquid','cardAvgMonth','cardAssets','cardLiabilities'];
 
 function getDashWidgetOrder(){
   try{
     const saved=localStorage.getItem('nw_widget_order');
     if(saved){
       const order=JSON.parse(saved);
-      // Merge saved order with any new widgets
-      const merged=[...order.filter(k=>WIDGET_KEYS.includes(k)),...WIDGET_KEYS.filter(k=>!order.includes(k))];
-      return merged;
+      return [...order.filter(k=>WIDGET_KEYS.includes(k)),...WIDGET_KEYS.filter(k=>!order.includes(k))];
     }
   }catch(e){}
   return [...WIDGET_KEYS];
@@ -933,44 +932,70 @@ function saveDashWidgetOrder(order){
   try{localStorage.setItem('nw_widget_order',JSON.stringify(order));}catch(e){}
 }
 
-function initDashDrag(){
-  const container=$('dash-widgets');
-  if(!container) return;
-  let dragSrc=null;
+function getCardOrder(){
+  try{
+    const saved=localStorage.getItem('nw_card_order');
+    if(saved){
+      const order=JSON.parse(saved);
+      return [...order.filter(k=>CARD_KEYS.includes(k)),...CARD_KEYS.filter(k=>!order.includes(k))];
+    }
+  }catch(e){}
+  return [...CARD_KEYS];
+}
 
-  container.querySelectorAll('.dash-widget').forEach(w=>{
-    w.addEventListener('dragstart',e=>{
-      dragSrc=w;
-      w.classList.add('dragging');
-      e.dataTransfer.effectAllowed='move';
+function saveCardOrder(order){
+  try{localStorage.setItem('nw_card_order',JSON.stringify(order));}catch(e){}
+}
+
+function initDashDrag(){
+  // Init chart widget drag
+  const container=$('dash-widgets');
+  if(container){
+    let dragSrc=null;
+    container.querySelectorAll('.dash-widget').forEach(w=>{
+      w.addEventListener('dragstart',e=>{dragSrc=w;w.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+      w.addEventListener('dragend',()=>{w.classList.remove('dragging');container.querySelectorAll('.dash-widget').forEach(x=>x.classList.remove('drag-over'));});
+      w.addEventListener('dragover',e=>{e.preventDefault();if(w!==dragSrc)w.classList.add('drag-over');});
+      w.addEventListener('dragleave',()=>w.classList.remove('drag-over'));
+      w.addEventListener('drop',e=>{
+        e.preventDefault();w.classList.remove('drag-over');
+        if(!dragSrc||dragSrc===w)return;
+        if(dragSrc.dataset.widget&&w.dataset.widget){
+          if(CARD_KEYS.includes(dragSrc.dataset.widget)||CARD_KEYS.includes(w.dataset.widget))return;
+        }
+        const srcIdx=[...container.querySelectorAll('.dash-widget')].indexOf(dragSrc);
+        const tgtIdx=[...container.querySelectorAll('.dash-widget')].indexOf(w);
+        if(srcIdx<tgtIdx)container.insertBefore(dragSrc,w.nextSibling);
+        else container.insertBefore(dragSrc,w);
+        saveDashWidgetOrder([...container.querySelectorAll('.dash-widget')].map(x=>x.dataset.widget));
+        renderDashCharts();
+      });
     });
-    w.addEventListener('dragend',()=>{
-      w.classList.remove('dragging');
-      container.querySelectorAll('.dash-widget').forEach(x=>x.classList.remove('drag-over'));
+  }
+
+  // Init card drag
+  const cardGrid=$('dash-cards');
+  if(cardGrid){
+    let cardDragSrc=null;
+    cardGrid.querySelectorAll('.card[data-card]').forEach(c=>{
+      c.setAttribute('draggable','true');
+      c.addEventListener('dragstart',e=>{cardDragSrc=c;c.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.stopPropagation();});
+      c.addEventListener('dragend',()=>{c.classList.remove('dragging');cardGrid.querySelectorAll('.card').forEach(x=>x.classList.remove('drag-over'));});
+      c.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();if(c!==cardDragSrc)c.classList.add('drag-over');});
+      c.addEventListener('dragleave',()=>c.classList.remove('drag-over'));
+      c.addEventListener('drop',e=>{
+        e.preventDefault();e.stopPropagation();
+        c.classList.remove('drag-over');
+        if(!cardDragSrc||cardDragSrc===c)return;
+        const cards=[...cardGrid.querySelectorAll('.card[data-card]')];
+        const srcIdx=cards.indexOf(cardDragSrc);
+        const tgtIdx=cards.indexOf(c);
+        if(srcIdx<tgtIdx)cardGrid.insertBefore(cardDragSrc,c.nextSibling);
+        else cardGrid.insertBefore(cardDragSrc,c);
+        saveCardOrder([...cardGrid.querySelectorAll('.card[data-card]')].map(x=>x.dataset.card));
+      });
     });
-    w.addEventListener('dragover',e=>{
-      e.preventDefault();
-      e.dataTransfer.dropEffect='move';
-      if(w!==dragSrc) w.classList.add('drag-over');
-    });
-    w.addEventListener('dragleave',()=>w.classList.remove('drag-over'));
-    w.addEventListener('drop',e=>{
-      e.preventDefault();
-      w.classList.remove('drag-over');
-      if(!dragSrc||dragSrc===w) return;
-      // Reorder in DOM
-      const widgets=[...container.querySelectorAll('.dash-widget')];
-      const srcIdx=widgets.indexOf(dragSrc);
-      const tgtIdx=widgets.indexOf(w);
-      if(srcIdx<tgtIdx) container.insertBefore(dragSrc,w.nextSibling);
-      else container.insertBefore(dragSrc,w);
-      // Save new order
-      const newOrder=[...container.querySelectorAll('.dash-widget')].map(x=>x.dataset.widget);
-      saveDashWidgetOrder(newOrder);
-      // Re-render charts in new order
-      renderDashCharts();
-    });
-  });
+  }
 }
 
 function renderDash(){
@@ -993,15 +1018,19 @@ function renderDash(){
 
   if(selectedCat===null){
     // ── Two-column top: cards left, by-category right ──
-    let cardsHtml=`<div class="cards">
-      ${vis.cardNetWorth!==false?`<div class="card"><div class="card-label">Net worth</div><div class="card-value">${fmt(total)}</div></div>`:''}
-      ${vis.cardSinceLastEntry!==false?(diff!==null?`<div class="card"><div class="card-label">Since last entry</div><div class="card-value ${diff>=0?'green':'red'}">${fmtD(diff)}</div><div class="card-sub">${diff>=0?'+':''}${pct.toFixed(1)}%</div></div>`:`<div class="card"><div class="card-label">Entries</div><div class="card-value">${entries.length}</div></div>`):''}
-      ${vis.cardLastUpdated!==false?`<div class="card"><div class="card-label">Last updated</div><div class="card-value" style="font-size:13px;padding-top:4px">${last.date}</div><div class="card-sub" style="font-family:inherit">${entries.length} entr${entries.length===1?'y':'ies'}</div></div>`:''}
-      ${vis.cardLiquid!==false?`<div class="card"><div class="card-label">Liquid assets</div><div class="card-value" style="color:var(--green)">${fmt(liquidTotal)}</div>${liquidDiff!==null&&liquidDiff!==0?`<div class="card-sub" style="color:${liquidDiff>=0?'var(--green)':'var(--red)'}">${fmtD(liquidDiff)}</div>`:''}</div>`:''}
-      ${vis.cardAvgMonth!==false&&avgMo!==null?`<div class="card"><div class="card-label">Avg/month (3mo)</div><div class="card-value ${avgMo.dollar>=0?'green':'red'}">${fmtD(avgMo.dollar)}</div><div class="card-sub" style="color:${avgMo.dollar>=0?'var(--green)':'var(--red)'}">${avgMo.pct!==null?(avgMo.pct>=0?'+':'')+avgMo.pct+'% / mo':''}</div></div>`:''}
-      ${vis.cardAssets!==false?`<div class="card" data-widget="cardAssets"><div class="card-label">Total assets</div><div class="card-value" style="color:var(--green)">${fmt(assetTotal)}</div></div>`:''}
-      ${vis.cardLiabilities!==false?`<div class="card" data-widget="cardLiabilities"><div class="card-label">Total liabilities</div><div class="card-value" style="color:var(--red)">${fmt(liabTotal)}</div></div>`:''}
-    </div>`;
+    const allCards={
+      cardNetWorth:vis.cardNetWorth!==false?`<div class="card" data-card="cardNetWorth" style="cursor:grab" title="Drag to reorder"><div class="card-label">Net worth</div><div class="card-value">${fmt(total)}</div></div>`:'',
+      cardSinceLastEntry:vis.cardSinceLastEntry!==false?(diff!==null?`<div class="card" data-card="cardSinceLastEntry" style="cursor:grab" title="Drag to reorder"><div class="card-label">Since last entry</div><div class="card-value ${diff>=0?'green':'red'}">${fmtD(diff)}</div><div class="card-sub">${diff>=0?'+':''}${pct.toFixed(1)}%</div></div>`:`<div class="card" data-card="cardSinceLastEntry" style="cursor:grab"><div class="card-label">Entries</div><div class="card-value">${entries.length}</div></div>`):'',
+      cardLastUpdated:vis.cardLastUpdated!==false?`<div class="card" data-card="cardLastUpdated" style="cursor:grab" title="Drag to reorder"><div class="card-label">Last updated</div><div class="card-value" style="font-size:13px;padding-top:4px">${last.date}</div><div class="card-sub" style="font-family:inherit">${entries.length} entr${entries.length===1?'y':'ies'}</div></div>`:'',
+      cardLiquid:vis.cardLiquid!==false?`<div class="card" data-card="cardLiquid" style="cursor:grab" title="Drag to reorder"><div class="card-label">Liquid assets</div><div class="card-value" style="color:var(--green)">${fmt(liquidTotal)}</div>${liquidDiff!==null&&liquidDiff!==0?`<div class="card-sub" style="color:${liquidDiff>=0?'var(--green)':'var(--red)'}">${fmtD(liquidDiff)}</div>`:''}</div>`:'',
+      cardAvgMonth:vis.cardAvgMonth!==false&&avgMo!==null?`<div class="card" data-card="cardAvgMonth" style="cursor:grab" title="Drag to reorder"><div class="card-label">Avg/month (3mo)</div><div class="card-value ${avgMo.dollar>=0?'green':'red'}">${fmtD(avgMo.dollar)}</div><div class="card-sub" style="color:${avgMo.dollar>=0?'var(--green)':'var(--red)'}">${avgMo.pct!==null?(avgMo.pct>=0?'+':'')+avgMo.pct+'% / mo':''}</div></div>`:'',
+      cardAssets:vis.cardAssets!==false?`<div class="card" data-card="cardAssets" style="cursor:grab" title="Drag to reorder"><div class="card-label">Total assets</div><div class="card-value" style="color:var(--green)">${fmt(assetTotal)}</div></div>`:'',
+      cardLiabilities:vis.cardLiabilities!==false?`<div class="card" data-card="cardLiabilities" style="cursor:grab" title="Drag to reorder"><div class="card-label">Total liabilities</div><div class="card-value" style="color:var(--red)">${fmt(liabTotal)}</div></div>`:'',
+    };
+    const cardOrder=getCardOrder();
+    let cardsHtml=`<div class="cards" id="dash-cards">`;
+    cardOrder.forEach(k=>{if(allCards[k])cardsHtml+=allCards[k];});
+    cardsHtml+=`</div>`;
 
     let catHtml=`<div>
       <p class="section-label" style="margin-top:0;margin-bottom:7px">By category</p>
