@@ -2549,7 +2549,25 @@ function getTrialDaysLeft(trialStart){
 function checkAccess(s){
   if(!s) return {allowed:true,status:'trialing',daysLeft:TRIAL_DAYS};
   const status=s.subscription_status||'trialing';
+
+  // Active subscription
   if(status==='active') return {allowed:true,status:'active',daysLeft:null};
+
+  // Cancelled but still within paid period
+  if(status==='cancelled'&&s.subscription_ends_at){
+    const endsAt=new Date(s.subscription_ends_at);
+    const now=new Date();
+    if(endsAt>now){
+      const daysLeft=Math.ceil((endsAt-now)/(1000*60*60*24));
+      return {allowed:true,status:'cancelled',daysLeft,endsAt};
+    }
+    return {allowed:false,status:'expired',daysLeft:0};
+  }
+
+  // Explicitly expired
+  if(status==='expired') return {allowed:false,status:'expired',daysLeft:0};
+
+  // Trialing
   const daysLeft=getTrialDaysLeft(s.trial_start);
   if(daysLeft>0) return {allowed:true,status:'trialing',daysLeft};
   return {allowed:false,status:'expired',daysLeft:0};
@@ -2631,7 +2649,7 @@ async function verifyAndUnlock(){
   const dash=$('pane-dashboard');
   if(dash) dash.innerHTML=`<div class="paywall-inner"><p style="color:var(--text2);font-size:13px">Checking your subscription...</p></div>`;
   try{
-    const {data:s}=await sb.from('user_settings').select('subscription_status,trial_start').eq('user_id',currentUser.id).maybeSingle();
+    const {data:s}=await sb.from('user_settings').select('subscription_status,subscription_ends_at,trial_start').eq('user_id',currentUser.id).maybeSingle();
     if(s&&s.subscription_status==='active'){
       sessionStorage.removeItem('nw_paywall');
       window._paywallActive=false;
@@ -2763,6 +2781,12 @@ async function loadFromSupabase(){
       if(access.status==='trialing'&&access.daysLeft!==null){
         $('trial-banner-text').textContent=`Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} remaining`;
         $('trial-banner-link').href='https://networthfyi.lemonsqueezy.com/checkout/buy/d2369d61-b33d-441f-a645-8a374e2b8bb8';
+        $('trial-banner-link').textContent='Upgrade →';
+        banner.style.display='flex';
+      } else if(access.status==='cancelled'&&access.daysLeft){
+        $('trial-banner-text').textContent=`Subscription cancelled — access ends in ${access.daysLeft} day${access.daysLeft===1?'':'s'}`;
+        $('trial-banner-link').href='https://app.lemonsqueezy.com/my-orders';
+        $('trial-banner-link').textContent='Reactivate →';
         banner.style.display='flex';
       } else {
         banner.style.display='none';
@@ -2993,7 +3017,7 @@ document.addEventListener('visibilitychange',async()=>{
       await signOut();
       return;
     }
-    const {data:s}=await sb.from('user_settings').select('subscription_status,trial_start').eq('user_id',currentUser.id).maybeSingle();
+    const {data:s}=await sb.from('user_settings').select('subscription_status,subscription_ends_at,trial_start').eq('user_id',currentUser.id).maybeSingle();
     if(s){
       const access=checkAccess(s);
       if(!access.allowed){
