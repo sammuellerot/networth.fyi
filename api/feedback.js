@@ -34,7 +34,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'EquiTerra Feedback <onboarding@resend.dev>',
+        from: 'EquiTerra Feedback <hello@equiterra.app>',
         to: 'sam.mueller@opsterra.com',
         reply_to: email,
         subject,
