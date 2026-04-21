@@ -97,7 +97,7 @@
   .dash-top .cards{display:flex;flex-direction:column;gap:8px;margin-bottom:0;}
   /* ── Mobile ── */
   /* ── Mobile ── */
-  @media(max-width:680px){
+  @media(max-width:768px){
     /* Layout */
     #app{flex-direction:column;}
     #sidebar{width:100%;min-height:auto;position:sticky;top:0;flex-direction:column;border-right:none;border-bottom:1px solid var(--border);z-index:20;}
@@ -172,11 +172,14 @@
   }
 
   /* Tablet tweaks */
-  @media(max-width:900px) and (min-width:681px){
+  @media(max-width:900px) and (min-width:769px){
     #main-content{padding:20px 24px;}
     #content-inner{max-width:100%;}
   }
   .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+  @media(max-width:500px){
+    .cards,.cards-few{grid-template-columns:repeat(2,1fr) !important;}
+  }
   .cards-few{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;max-width:calc(66.66% + 10px);}
   .filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:20px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);}
   .filter-bar-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-right:4px;}
