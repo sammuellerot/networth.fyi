@@ -19,15 +19,15 @@
 
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&family=Barlow:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;scrollbar-width:none;-ms-overflow-style:none;}
   *::-webkit-scrollbar{display:none;}
   /* ── Auth overlay ── */
   #auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
   #boot-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;}
-  .boot-logo{font-family:'Playfair Display',serif;font-size:24px;color:var(--text);opacity:.6;}
+  .boot-logo{font-family:'Playfair Display',serif;font-size:24px;font-weight:600;} .boot-logo .equi{color:var(--accent);opacity:.6;} .boot-logo .terra{color:var(--text);opacity:.6;}
   .auth-box{width:100%;max-width:380px;}
-  .auth-logo{font-size:26px;font-weight:400;margin-bottom:6px;font-family:'Playfair Display',serif;letter-spacing:-.5px;}
+  .auth-logo{font-size:26px;font-weight:600;margin-bottom:6px;font-family:'Playfair Display',serif;letter-spacing:-.5px;} .auth-logo .equi{color:var(--accent);} .auth-logo .terra{color:var(--text);}
   .auth-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
   .auth-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
   .auth-tab{flex:1;padding:8px;font-size:13px;background:transparent;border:none;cursor:pointer;font-family:inherit;color:var(--text2);}
@@ -70,7 +70,7 @@
   /* ── Sidebar ── */
   #sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:10;}
   #sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);margin-bottom:8px;}
-  #sidebar-logo .logo-text{font-size:20px;font-weight:400;letter-spacing:-.3px;color:var(--text);font-family:'Playfair Display',serif;}
+  #sidebar-logo .logo-text{font-size:20px;font-weight:600;letter-spacing:-.3px;font-family:'Playfair Display',serif;} #sidebar-logo .logo-text .equi{color:var(--accent);} #sidebar-logo .logo-text .terra{color:var(--text);}
   #sidebar-logo .logo-sub{font-size:10px;color:var(--text2);margin-top:1px;letter-spacing:.05em;text-transform:uppercase;}
   #sidebar-nav{flex:1;padding:4px 10px;}
   .tab{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;font-size:13px;background:transparent;border:none;border-radius:8px;cursor:pointer;color:var(--text2);font-family:'Inter',sans-serif;font-weight:400;text-align:left;margin-bottom:2px;transition:background .12s,color .12s;}
@@ -291,12 +291,12 @@ function forgotPassword(){
 </script>
 
 <!-- Boot screen — shown while checking session -->
-<div id="boot-screen"><div class="boot-logo">EquiTerra</div></div>
+<div id="boot-screen"><div class="boot-logo"><span class="equi">Equi</span><span class="terra">Terra</span></div></div>
 
 <!-- Auth overlay — shown when logged out -->
 <div id="auth-overlay">
   <div class="auth-box">
-    <div class="auth-logo">EquiTerra</div>
+    <div class="auth-logo"><span class="equi">Equi</span><span class="terra">Terra</span></div>
     <div class="auth-sub">Your net worth. Your data. Private by default.</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="setAuthTab('login')">Sign in</button>
@@ -366,7 +366,7 @@ function forgotPassword(){
 <div id="app" style="display:none">
   <nav id="sidebar">
     <div id="sidebar-logo">
-      <div class="logo-text">EquiTerra</div>
+      <div class="logo-text"><span class="equi">Equi</span><span class="terra">Terra</span></div>
       <button id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu" style="display:none;background:transparent;border:none;cursor:pointer;padding:6px;color:var(--text);flex-direction:column;gap:5px;">
         <span class="ham-line"></span>
         <span class="ham-line"></span>
@@ -405,7 +405,7 @@ function forgotPassword(){
   <div id="mobile-menu" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:rgba(0,0,0,0.5);" onclick="closeMobileMenu()">
     <div style="position:absolute;top:0;right:0;width:240px;height:100%;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;padding:0;" onclick="event.stopPropagation()">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);">
-        <span style="font-family:'Playfair Display',serif;font-size:18px;">EquiTerra</span>
+        <span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600;"><span style="color:var(--accent)">Equi</span><span style="color:var(--text)">Terra</span></span>
         <button onclick="closeMobileMenu()" style="background:transparent;border:none;cursor:pointer;font-size:20px;color:var(--text2);line-height:1;padding:4px;">✕</button>
       </div>
       <div style="flex:1;padding:8px 10px;overflow-y:auto;">
@@ -2576,7 +2576,7 @@ function showAuth(){
   const box=document.querySelector('.auth-box');
   if(box && !$('auth-email')){
     box.innerHTML=`
-      <div class="auth-logo">EquiTerra</div>
+      <div class="auth-logo"><span class="equi">Equi</span><span class="terra">Terra</span></div>
       <div class="auth-sub">Your net worth. Your data. Private by default.</div>
       <div class="auth-tabs">
         <button class="auth-tab active" onclick="setAuthTab('login')">Sign in</button>
@@ -3175,7 +3175,7 @@ function showResetPassword(){
   const box = document.querySelector('.auth-box');
   if(box){
     box.innerHTML=`
-      <div class="auth-logo">EquiTerra</div>
+      <div class="auth-logo"><span class="equi">Equi</span><span class="terra">Terra</span></div>
       <div class="auth-sub">Set a new password for your account.</div>
       <div class="auth-field"><label>New password</label><input type="password" id="reset-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitReset()"/></div>
       <div class="auth-field"><label>Confirm password</label><input type="password" id="reset-pw2" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitReset()"/></div>
