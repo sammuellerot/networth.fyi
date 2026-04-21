@@ -2464,7 +2464,7 @@ function getLSCheckoutUrl(base){
 
 function paywallHTML(){
   const monthlyUrl=getLSCheckoutUrl('https://equiterra.lemonsqueezy.com/checkout/buy/674917a0-506a-448a-86f5-cc14b7ef902e');
-  const lifetimeUrl=getLSCheckoutUrl('https://equiterra.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c');
+  const annualUrl=getLSCheckoutUrl('https://networthfyi.lemonsqueezy.com/checkout/buy/d2369d61-b33d-441f-a645-8a374e2b8bb8');
   return `<div class="paywall-inner">
     <div style="font-size:32px;margin-bottom:12px">🔒</div>
     <div class="paywall-title">Your 14-day free trial has ended</div>
@@ -2476,10 +2476,10 @@ function paywallHTML(){
         <div class="plan-period">per month</div>
         <div style="font-size:11px;color:var(--text2);margin-top:8px">Cancel anytime</div>
       </a>
-      <a class="plan-card featured" href="${lifetimeUrl}" target="_blank">
+      <a class="plan-card featured" href="${annualUrl}" target="_blank">
         <div class="plan-badge">Best value</div>
-        <div class="plan-label">Lifetime</div>
-        <div class="plan-price">$50</div>
+        <div class="plan-label">Annual</div>
+        <div class="plan-price">$25</div>
         <div class="plan-period">one-time payment</div>
         <div style="font-size:11px;color:var(--text2);margin-top:8px">Pay once, use forever</div>
       </a>
@@ -2660,7 +2660,7 @@ async function loadFromSupabase(){
     if(banner){
       if(access.status==='trialing'&&access.daysLeft!==null){
         $('trial-banner-text').textContent=`Free trial: ${access.daysLeft} day${access.daysLeft===1?'':'s'} remaining`;
-        $('trial-banner-link').href='https://equiterra.lemonsqueezy.com/checkout/buy/145047a7-4164-4b0d-ab26-189271dd5a0c';
+        $('trial-banner-link').href='https://networthfyi.lemonsqueezy.com/checkout/buy/d2369d61-b33d-441f-a645-8a374e2b8bb8';
         banner.style.display='flex';
       } else {
         banner.style.display='none';
