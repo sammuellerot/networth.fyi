@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     if (!activeUsers.length) return res.status(200).json({ sent: 0 });
 
     const month = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
-    const quickEntryUrl = `${APP_URL}/app?quick=1`;
+    const quickEntryUrl = `${APP_URL}/?quick=1`;
     let sent = 0;
 
     for (const user of activeUsers) {
@@ -59,13 +59,13 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Equiterra <onboarding@resend.dev>',
+          from: 'EquiTerra <hello@equiterra.app>',
           to: email,
           subject: `Time to update your net worth — ${month}`,
           html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#0a0a0b;font-family:Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
 <tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
-<tr><td style="padding-bottom:28px;"><span style="font-family:Georgia,serif;font-size:22px;color:#f0ede8;">Equiterra</span></td></tr>
+<tr><td style="padding-bottom:28px;"><span style="font-family:Georgia,serif;font-size:22px;color:#f0ede8;">EquiTerra</span></td></tr>
 <tr><td style="background:#111113;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:32px;">
   <p style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#5a5550;">Monthly reminder</p>
   <h1 style="margin:0 0 14px;font-size:22px;font-weight:600;color:#f0ede8;">Time to log ${month}</h1>
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
   <a href="${quickEntryUrl}" style="display:inline-block;background:#1D9E75;color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:8px;">Update my net worth →</a>
 </td></tr>
 <tr><td style="padding-top:20px;">
-  <p style="margin:0;font-size:12px;color:#3a3530;line-height:1.6;">You're receiving this because you enabled monthly reminders in your <a href="${APP_URL}/app" style="color:#5a5550;">settings</a>. To turn off, go to Settings → Monthly entry reminder.</p>
+  <p style="margin:0;font-size:12px;color:#3a3530;line-height:1.6;">You're receiving this because you enabled monthly reminders in your <a href="${APP_URL}/" style="color:#5a5550;">settings</a>. To turn off, go to Settings → Monthly entry reminder.</p>
 </td></tr>
 </table></td></tr></table>
 </body></html>`,
