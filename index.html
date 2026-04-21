@@ -409,9 +409,11 @@ const fmtD=n=>(n>=0?'+':'')+fmt(n);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
 // Sum ALL values in an entry (active + archived) — keeps totals accurate forever
-const sumE=e=>accounts.reduce((s,a)=>{
-  const v=e.values[a.name]||0;
-  return s+(a.type==='liability'?-v:v);
+const sumE=e=>Object.keys(e.values).reduce((s,name)=>{
+  const v=e.values[name]||0;
+  const acc=accounts.find(a=>a.name===name);
+  // If account not found or is asset, add. If liability, subtract.
+  return s+(acc&&acc.type==='liability'?-v:v);
 },0);
 
 const activeAccounts=()=>accounts.filter(a=>!a.archived);
@@ -1451,7 +1453,7 @@ function renderHist(){
     </div>
     <div class="entry-bar">
       <div class="field"><label>Date</label><input type="date" id="edit-date" value="${entry.date}"/></div>
-      <div><div class="live-total-label">Running total</div><div class="live-total" id="edit-total">${fmt(Object.values(entry.values).reduce((a,b)=>a+b,0))}</div></div>
+      <div><div class="live-total-label">Running total</div><div class="live-total" id="edit-total">${fmt(sumE(entry))}</div></div>
       <div style="margin-left:auto;align-self:flex-end"><button class="primary" onclick="saveEditedEntry()">Save changes</button></div>
     </div>`;
 
@@ -1513,10 +1515,14 @@ function cancelEdit(){
 function onEditInput(inp){
   const val=parseFloat(inp.value)||0;
   const name=inp.dataset.acc;
-  // update live total
+  // update live total respecting liability type
   const allInputs=document.querySelectorAll('#pane-history input[data-acc]');
   let total=0;
-  allInputs.forEach(i=>{total+=parseFloat(i.value)||0;});
+  allInputs.forEach(i=>{
+    const v=parseFloat(i.value)||0;
+    const acc=accounts.find(a=>a.name===i.dataset.acc);
+    total+=acc&&acc.type==='liability'?-v:v;
+  });
   const el=$('edit-total');if(el)el.textContent=fmt(total);
 }
 
@@ -1657,7 +1663,15 @@ function handleNameBlur(inp){
   entries.forEach(e=>{if(old in e.values){e.values[newName]=e.values[old];delete e.values[old];}});
   acct.name=newName;
   persistAccounts();persist();fv={};
-  showMsg(`<div class="msg ok">Renamed to "${esc(newName)}".</div>`);
+  showMsg(`<div class="msg ok">Renamed to "${esc(newName)}". Syncing history...</div>`);
+  if(currentUser){
+    saveAccountsToSupabase();
+    // Re-save all entries so value keys reflect new name in Supabase
+    (async()=>{
+      for(const e of entries) await saveEntryToSupabase(e);
+      showMsg(`<div class="msg ok">Renamed to "${esc(newName)}".</div>`);
+    })();
+  }
 }
 
 /* ── Category edit (auto-save on change) ── */
@@ -1769,7 +1783,12 @@ function onInput(inp){
   const totalEl=$('live-total');
   if(totalEl){
     const all=document.querySelectorAll('#pane-enter input[data-acc]');
-    let t=0; all.forEach(i=>{t+=parseFloat(i.value)||0;});
+    let t=0;
+    all.forEach(i=>{
+      const v=parseFloat(i.value)||0;
+      const acc=accounts.find(a=>a.name===i.dataset.acc);
+      t+=acc&&acc.type==='liability'?-v:v;
+    });
     totalEl.textContent=fmt(t);
   }
 
