@@ -1039,12 +1039,14 @@ function renderDashCharts(){
     b.style.borderColor=active?'#1D9E75':'var(--border2)';
   });
 
+  const vis=settings.visuals||{};
+
   const lineCtx=$('dashLineChart');
   if(lineCtx){
-    const vis=settings.visuals||{};
-    lineCtx.closest('.chart-wrap')&&(lineCtx.closest('.chart-wrap').style.display=(vis.lineChart===false)?'none':'');
-    if(vis.lineChart===false){if(dashLineChart){dashLineChart.destroy();dashLineChart=null;}}
+    const wrap=lineCtx.closest('.chart-wrap');
+    if(wrap) wrap.style.display=vis.lineChart!==false?'':'none';
     if(dashLineChart){dashLineChart.destroy();dashLineChart=null;}
+    if(vis.lineChart!==false){
     const isCat=selectedCat!==null;
     const actualVals=isCat?getCatTimeSeries(selectedCat,fe):fe.map(sumE);
     const color=isCat?'#378ADD':'#1D9E75';
@@ -1094,16 +1096,15 @@ function renderDashCharts(){
         }
       }
     });
-  }
+    }} // close vis.lineChart check and lineCtx if
 
   // MoM bar chart
   const momCtx=$('dashMoMChart');
   if(momCtx){
-    const vis=settings.visuals||{};
-    momCtx.closest('.chart-wrap')&&(momCtx.closest('.chart-wrap').style.display=(vis.momChart===false)?'none':'');
-    if(vis.momChart===false){if(dashMoMChart){dashMoMChart.destroy();dashMoMChart=null;}}
+    const momWrap=momCtx.closest('.chart-wrap');
+    if(momWrap) momWrap.style.display=vis.momChart!==false?'':'none';
     if(dashMoMChart){dashMoMChart.destroy();dashMoMChart=null;}
-    // Use only actual filtered entries — never forecast dates
+    if(vis.momChart!==false){
     const md=getMoMData(fe);
     if(md.length){
       const usePct=momMode==='%';
@@ -1139,15 +1140,15 @@ function renderDashCharts(){
         }
       });
     }
-  }
+    }} // close vis.momChart check and momCtx if
 
   // Category pie chart
   const pieCtx=$('dashPieChart');
   if(pieCtx){
-    const vis=settings.visuals||{};
-    pieCtx.closest('[style*="width:180px"]')&&(pieCtx.closest('[style*="width:180px"]').style.display=(vis.pieChart===false)?'none':'');
-    if(vis.pieChart===false){if(dashPieChart){dashPieChart.destroy();dashPieChart=null;}}
+    const pieWrap=pieCtx.closest('div');
+    if(pieWrap) pieWrap.style.display=vis.pieChart!==false?'':'none';
     if(dashPieChart){dashPieChart.destroy();dashPieChart=null;}
+    if(vis.pieChart!==false){
     const pd=getCatPieData();
     if(pd.length){
       const PIE_COLORS=['#1D9E75','#378ADD','#E24B4A','#EF9F27','#D4537E','#7F77DD','#639922','#BA7517','#1D9E75'];
@@ -1189,7 +1190,7 @@ function renderDashCharts(){
           </div>`).join('');
       }
     }
-  }
+    }} // close vis.pieChart check and pieCtx if
 
   // Category drilldown pie (accounts within selected category)
   const catPieCtx=$('catPieChart');
