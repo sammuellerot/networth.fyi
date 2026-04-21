@@ -418,7 +418,7 @@ const sumE=e=>Object.keys(e.values).reduce((s,name)=>{
 
 const activeAccounts=()=>accounts.filter(a=>!a.archived);
 const archivedAccounts=()=>accounts.filter(a=>a.archived);
-const getCats=()=>[...new Set(activeAccounts().map(a=>a.cat))];
+const getCats=()=>[...new Set(activeAccounts().filter(a=>a.type!=='liability').map(a=>a.cat))];
 
 // Last known value for an account across all entries
 const lastVal=(name)=>{
@@ -1046,7 +1046,8 @@ function renderDash(){
       <p class="section-label" style="margin-top:0;margin-bottom:7px">By category</p>
       <div class="list">`;
     getCats().forEach(cat=>{
-      const accs=activeAccounts().filter(a=>a.cat===cat);
+      const accs=activeAccounts().filter(a=>a.cat===cat&&a.type!=='liability');
+      if(!accs.length) return;
       const val=accs.reduce((s,a)=>s+(last.values[a.name]||0),0);
       const pval=prev?accs.reduce((s,a)=>s+(prev.values[a.name]||0),0):null;
       const cd=pval!==null?val-pval:null;
@@ -1061,6 +1062,23 @@ function renderDash(){
         </div>
       </div>`;
     });
+
+    // Liabilities row — reversed colors (down = green)
+    const liabAccs=activeAccounts().filter(a=>a.type==='liability');
+    if(liabAccs.length>0){
+      const liabVal=liabAccs.reduce((s,a)=>s+(last.values[a.name]||0),0);
+      const liabPval=prev?liabAccs.reduce((s,a)=>s+(prev.values[a.name]||0),0):null;
+      const liabCd=liabPval!==null?liabVal-liabPval:null;
+      const liabCpct=liabPval&&liabPval>0&&liabCd!==null?liabCd/liabPval*100:null;
+      catHtml+=`<div class="list-row" onclick="selectCat('__liabilities__')" style="cursor:pointer;padding:8px 12px;border-top:1px dashed var(--border)" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='var(--bg)'">
+        <span style="font-size:12px;color:var(--text2)">Liabilities <span style="font-size:10px">›</span></span>
+        <div class="row-right" style="gap:6px">
+          ${liabCd!==null&&liabCd!==0?`<span class="row-diff ${liabCd<=0?'green':'red'}" style="font-size:11px">${fmtD(liabCd)}</span>`:''}
+          ${liabCpct!==null&&liabCd!==0?`<span style="font-size:10px;font-family:var(--mono);color:${liabCd<=0?'var(--green)':'var(--red)'}">(${liabCd>=0?'+':''}${liabCpct.toFixed(1)}%)</span>`:''}
+          <span class="row-val" style="font-size:12px;color:var(--red)">${fmt(liabVal)}</span>
+        </div>
+      </div>`;
+    }
 
     // Archived with value
     const archivedWithValue=archivedAccounts().filter(a=>(last.values[a.name]||0)>0);
@@ -1124,26 +1142,42 @@ function renderDash(){
 
   } else {
     const fe=getFilteredEntries();
-    const rows=getCatAccountRows(selectedCat,fe);
-    const catCur=rows.reduce((s,r)=>s+r.last,0),catFirst=rows.reduce((s,r)=>s+r.first,0);
+    const isLiab=selectedCat==='__liabilities__';
+
+    const rows=isLiab
+      ? (()=>{
+          const lastEntry=fe.length?fe[fe.length-1]:null;
+          return activeAccounts().filter(a=>a.type==='liability').map(a=>{
+            let first=0;
+            for(let i=0;i<fe.length;i++){if((fe[i].values[a.name]||0)>0){first=fe[i].values[a.name];break;}}
+            const last=lastEntry?lastEntry.values[a.name]||0:0;
+            const chg=last-first,pct=first?(chg/first*100):(last?100:0);
+            return {name:a.name,first,last,chg,pct};
+          }).filter(r=>r.first>0||r.last>0);
+        })()
+      : getCatAccountRows(selectedCat,fe);
+
+    const catCur=rows.reduce((s,r)=>s+r.last,0);
+    const catFirst=rows.reduce((s,r)=>s+r.first,0);
     const catChg=catCur-catFirst,catPct=catFirst?(catChg/catFirst*100):0;
+    const label=isLiab?'Liabilities':esc(selectedCat);
+    const chgColor=isLiab?(catChg<=0?'var(--green)'  :'var(--red)'):(catChg>=0?'var(--green)':'var(--red)');
+    const rowChgColor=(chg)=>isLiab?(chg===0?'var(--text2)':chg<=0?'var(--green)':'var(--red)'):(chg===0?'var(--text2)':chg>0?'var(--green)':'var(--red)');
+    const rowPctColor=(chg,pct)=>isLiab?(chg===0?'var(--text2)':pct<=0?'var(--green)':'var(--red)'):(chg===0?'var(--text2)':pct>0?'var(--green)':'var(--red)');
 
     html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <button onclick="selectCat(null)" style="padding:4px 12px;font-size:12px;border-radius:6px;cursor:pointer;font-family:inherit;border:1px solid var(--border2);background:transparent;color:var(--text2)">← All categories</button>
-      <span style="font-size:16px;font-weight:600">${esc(selectedCat)}</span>
-      ${catChg!==0?`<span style="font-size:13px;font-family:var(--mono);color:${catChg>=0?'var(--green)':'var(--red)'}">${fmtD(catChg)} (${catChg>=0?'+':''}${catPct.toFixed(1)}%)</span>`:''}
+      <span style="font-size:16px;font-weight:600">${label}</span>
+      ${catChg!==0?`<span style="font-size:13px;font-family:var(--mono);color:${chgColor}">${fmtD(catChg)} (${catChg>=0?'+':''}${catPct.toFixed(1)}%)</span>`:''}
     </div>
-
-    <div class="section-label" style="margin-top:0">${esc(selectedCat)} over time</div>
+    ${!isLiab?`<div class="section-label" style="margin-top:0">${esc(selectedCat)} over time</div>
     ${filterUI()}
     <div class="chart-wrap" style="height:220px"><canvas id="dashLineChart" role="img" aria-label="${esc(selectedCat)} over time">${esc(selectedCat)} over time.</canvas></div>
-
     <div class="section-label" style="margin-top:24px">Accounts breakdown</div>
     <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <div style="position:relative;width:150px;height:150px;flex-shrink:0"><canvas id="catPieChart" role="img" aria-label="${esc(selectedCat)} accounts pie">Accounts breakdown.</canvas></div>
       <div id="cat-pie-legend" style="flex:1;min-width:120px"></div>
-    </div>
-
+    </div>`:`<div class="section-label" style="margin-top:0;margin-bottom:12px">All liability accounts</div>`}
     <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
       <div style="display:grid;grid-template-columns:1fr 90px 90px 72px;background:var(--bg2);padding:5px 12px;gap:8px;border-bottom:1px solid var(--border)">
         <span style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Account</span>
@@ -1155,8 +1189,8 @@ function renderDash(){
       <div style="display:grid;grid-template-columns:1fr 90px 90px 72px;padding:7px 12px;gap:8px;align-items:center;background:var(--bg);${i>0?'border-top:1px solid var(--border)':''}">
         <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</span>
         <span style="font-size:12px;font-family:var(--mono);text-align:right;color:var(--text)">${fmt(r.last)}</span>
-        <span style="font-size:12px;font-family:var(--mono);text-align:right;color:${r.chg===0?'var(--text2)':r.chg>0?'var(--green)':'var(--red)'}">${r.chg===0?'—':fmtD(r.chg)}</span>
-        <span style="font-size:12px;font-family:var(--mono);text-align:right;color:${r.chg===0?'var(--text2)':r.pct>0?'var(--green)':'var(--red)'}">${r.chg===0?'—':(r.pct>=0?'+':'')+r.pct.toFixed(1)+'%'}</span>
+        <span style="font-size:12px;font-family:var(--mono);text-align:right;color:${rowChgColor(r.chg)}">${r.chg===0?'—':fmtD(r.chg)}</span>
+        <span style="font-size:12px;font-family:var(--mono);text-align:right;color:${rowPctColor(r.chg,r.pct)}">${r.chg===0?'—':(r.pct>=0?'+':'')+r.pct.toFixed(1)+'%'}</span>
       </div>`).join('')}
     </div>`;
 
