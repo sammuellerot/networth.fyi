@@ -32,7 +32,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ received: true });
   }
 
-  // Use service key to bypass RLS
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
   // Get user by email
@@ -52,26 +51,57 @@ export default async function handler(req, res) {
   const variantId = String(data?.attributes?.variant_id || data?.attributes?.first_order_item?.variant_id || '');
   const subscriptionId = String(data?.id || '');
   const status = data?.attributes?.status;
+  const attrs = data?.attributes || {};
+
+  // ends_at is when the current paid period ends (set on cancellation)
+  // renews_at is the next billing date (set on active subscriptions)
+  const endsAt = attrs.ends_at || null;
+  const renewsAt = attrs.renews_at || null;
 
   let subscriptionStatus = 'trialing';
+  let subscriptionEndsAt = null;
 
   if (eventName === 'order_created') {
-    // Annual subscription purchase
+    // Annual plan one-time purchase
     subscriptionStatus = 'active';
-  } else if (eventName === 'subscription_created' || eventName === 'subscription_updated') {
-    if (status === 'active') subscriptionStatus = 'active';
-    else if (status === 'cancelled' || status === 'expired' || status === 'paused') subscriptionStatus = 'expired';
-    else subscriptionStatus = 'trialing';
+    // Annual = 1 year from now
+    const endsDate = new Date();
+    endsDate.setFullYear(endsDate.getFullYear() + 1);
+    subscriptionEndsAt = endsDate.toISOString();
+
+  } else if (eventName === 'subscription_created') {
+    subscriptionStatus = 'active';
+    subscriptionEndsAt = renewsAt || null;
+
+  } else if (eventName === 'subscription_updated') {
+    if (status === 'active') {
+      subscriptionStatus = 'active';
+      subscriptionEndsAt = renewsAt || null;
+    } else if (status === 'cancelled') {
+      // Cancelled but still paid through ends_at — keep active until then
+      subscriptionStatus = 'cancelled';
+      subscriptionEndsAt = endsAt || null;
+    } else if (status === 'expired' || status === 'paused') {
+      subscriptionStatus = 'expired';
+      subscriptionEndsAt = null;
+    }
+
   } else if (eventName === 'subscription_cancelled') {
+    // User cancelled — keep access until end of billing period
+    subscriptionStatus = 'cancelled';
+    subscriptionEndsAt = endsAt || attrs.trial_ends_at || null;
+
+  } else if (eventName === 'subscription_expired') {
     subscriptionStatus = 'expired';
+    subscriptionEndsAt = null;
   }
 
-  // Upsert user settings
   const { error: updateErr } = await supabase
     .from('user_settings')
     .upsert({
       user_id: userId,
       subscription_status: subscriptionStatus,
+      subscription_ends_at: subscriptionEndsAt,
       ls_subscription_id: subscriptionId,
       ls_variant_id: variantId,
       updated_at: new Date().toISOString()
@@ -82,6 +112,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to update subscription' });
   }
 
-  console.log('Updated subscription status to', subscriptionStatus, 'for user', userId);
+  console.log(`Updated: status=${subscriptionStatus}, ends_at=${subscriptionEndsAt} for user ${userId}`);
   return res.status(200).json({ received: true });
 }
