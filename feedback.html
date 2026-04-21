@@ -1,123 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Feedback — EquiTerra</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{--bg:#0a0a0b;--bg2:#111113;--bg3:#1a1a1d;--text:#f0ede8;--text2:#8a8580;--text3:#5a5550;--green:#1D9E75;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--red:#c0392b;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
-nav{padding:18px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
-.nav-logo{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--text);text-decoration:none;}
-.nav-back{font-size:13px;color:var(--text2);text-decoration:none;}
-.nav-back:hover{color:var(--text);}
-.container{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
-.form-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:520px;padding:36px;}
-.form-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:400;margin-bottom:6px;}
-.form-sub{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.6;}
-.type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
-.type-btn{padding:11px;border:1px solid var(--border2);border-radius:8px;background:transparent;color:var(--text2);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;}
-.type-btn.selected{border-color:var(--green);background:rgba(29,158,117,0.08);color:var(--green);font-weight:500;}
-.field{margin-bottom:16px;}
-label{display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px;}
-input[type=text],input[type=email],textarea,select{width:100%;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);outline:none;transition:border-color .15s;}
-input:focus,textarea:focus,select:focus{border-color:var(--green);}
-textarea{resize:vertical;min-height:110px;line-height:1.6;}
-.err{font-size:12px;color:var(--red);margin-top:5px;display:none;}
-.submit-btn{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;}
-.submit-btn:disabled{opacity:.5;cursor:not-allowed;}
-.success{display:none;text-align:center;padding:16px 0;}
-footer{padding:20px 40px;border-top:1px solid var(--border);text-align:center;}
-footer p{font-size:12px;color:var(--text3);}
-</style>
-</head>
-<body>
-<nav>
-  <a href="/" class="nav-logo">EquiTerra</a>
-  <a href="/" class="nav-back">← Back to app</a>
-</nav>
-<div class="container">
-  <div class="form-box">
-    <div id="form-content">
-      <h1 class="form-title">Share your feedback</h1>
-      <p class="form-sub">Found a bug or have a feature idea? We read every submission and use it to shape what gets built next.</p>
-      <label>Type</label>
-      <div class="type-row">
-        <button class="type-btn selected" id="btn-feature" onclick="selectType('feature')">💡 Feature request</button>
-        <button class="type-btn" id="btn-bug" onclick="selectType('bug')">🐛 Bug report</button>
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { type, email, title, description, severity } = req.body;
+
+  if (!email || !title || !description) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const subject = `[EquiTerra ${type === 'bug' ? 'Bug' : 'Feature'}] ${title}`;
+    const html = `
+      <div style="font-family:sans-serif;max-width:560px;color:#333">
+        <h2 style="color:#1D9E75;margin-bottom:4px">${type === 'bug' ? '🐛 Bug Report' : '💡 Feature Request'}</h2>
+        <p style="color:#666;font-size:13px;margin-bottom:20px">Submitted via EquiTerra feedback form</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#999;width:120px">From</td><td style="padding:8px 0;border-bottom:1px solid #eee">${email}</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#999">Type</td><td style="padding:8px 0;border-bottom:1px solid #eee">${type === 'bug' ? 'Bug Report' : 'Feature Request'}</td></tr>
+          ${type === 'bug' ? `<tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#999">Severity</td><td style="padding:8px 0;border-bottom:1px solid #eee">${severity}</td></tr>` : ''}
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#999">Summary</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600">${title}</td></tr>
+        </table>
+        <div style="margin-top:20px;padding:16px;background:#f9f9f9;border-radius:8px;font-size:14px;line-height:1.6;white-space:pre-wrap">${description}</div>
       </div>
-      <input type="hidden" id="feedback-type" value="feature"/>
-      <div class="field">
-        <label>Your email</label>
-        <input type="email" id="feedback-email" placeholder="you@example.com"/>
-        <div class="err" id="err-email">Please enter a valid email.</div>
-      </div>
-      <div class="field">
-        <label id="title-label">Feature idea</label>
-        <input type="text" id="feedback-title" placeholder="Brief summary of your idea"/>
-        <div class="err" id="err-title">Please add a summary.</div>
-      </div>
-      <div class="field">
-        <label id="desc-label">Description</label>
-        <textarea id="feedback-desc" placeholder="Tell us more — the more detail the better."></textarea>
-        <div class="err" id="err-desc">Please add a description.</div>
-      </div>
-      <div class="field" id="field-severity" style="display:none">
-        <label>Severity</label>
-        <select id="feedback-severity">
-          <option value="low">Low — minor inconvenience</option>
-          <option value="medium" selected>Medium — disrupts workflow</option>
-          <option value="high">High — can't use the app</option>
-        </select>
-      </div>
-      <button class="submit-btn" id="submit-btn" onclick="submitFeedback()">Send feedback →</button>
-    </div>
-    <div class="success" id="success-msg">
-      <div style="font-size:36px;margin-bottom:14px;">✓</div>
-      <p style="font-size:18px;font-weight:600;margin-bottom:8px;">Thanks for the feedback!</p>
-      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:24px;">We review every submission. Your input shapes what gets built next.</p>
-      <a href="/" style="display:inline-block;padding:10px 24px;background:var(--green);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Back to app</a>
-    </div>
-  </div>
-</div>
-<footer><p>© 2026 EquiTerra. All rights reserved.</p></footer>
-<script>
-function selectType(t){
-  document.getElementById('feedback-type').value=t;
-  document.getElementById('btn-feature').classList.toggle('selected',t==='feature');
-  document.getElementById('btn-bug').classList.toggle('selected',t==='bug');
-  document.getElementById('title-label').textContent=t==='bug'?'What went wrong':'Feature idea';
-  document.getElementById('desc-label').textContent=t==='bug'?'Steps to reproduce':'Description';
-  document.getElementById('feedback-title').placeholder=t==='bug'?'Brief description of the bug':'Brief summary of your idea';
-  document.getElementById('feedback-desc').placeholder=t==='bug'?'Steps to reproduce + what you expected vs what happened.':'Tell us more — the more detail the better.';
-  document.getElementById('field-severity').style.display=t==='bug'?'block':'none';
+    `;
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'EquiTerra Feedback <onboarding@resend.dev>',
+        to: 'sam.mueller@opsterra.com',
+        reply_to: email,
+        subject,
+        html,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Resend error');
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Feedback error:', err);
+    return res.status(500).json({ error: err.message });
+  }
 }
-function submitFeedback(){
-  const t=document.getElementById('feedback-type').value;
-  const email=document.getElementById('feedback-email').value.trim();
-  const title=document.getElementById('feedback-title').value.trim();
-  const desc=document.getElementById('feedback-desc').value.trim();
-  const sev=document.getElementById('feedback-severity').value;
-  ['email','title','desc'].forEach(f=>document.getElementById('err-'+f).style.display='none');
-  let ok=true;
-  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){document.getElementById('err-email').style.display='block';ok=false;}
-  if(!title){document.getElementById('err-title').style.display='block';ok=false;}
-  if(!desc){document.getElementById('err-desc').style.display='block';ok=false;}
-  if(!ok) return;
-  const btn=document.getElementById('submit-btn');
-  btn.disabled=true;btn.textContent='Sending...';
-  const subject=`[EquiTerra ${t==='bug'?'Bug':'Feature'}] ${title}`;
-  const body=`Type: ${t==='bug'?'Bug Report':'Feature Request'}\nFrom: ${email}${t==='bug'?'\nSeverity: '+sev:''}\n\nSummary: ${title}\n\n${desc}`;
-  window.location.href=`mailto:sam.mueller@opsterra.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  setTimeout(()=>{
-    document.getElementById('form-content').style.display='none';
-    document.getElementById('success-msg').style.display='block';
-  },600);
-}
-</script>
-</body>
-</html>
