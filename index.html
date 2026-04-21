@@ -1605,27 +1605,6 @@ function renderManage(){
   /* ── Archived accounts ── */
   if(archived.length>0){
     html+=`<div class="section-label" style="margin-top:24px">Archived accounts</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">These accounts are hidden from Enter values. All history is fully preserved.</p>
-    <div class="mgmt-header" style="border-radius:8px 8px 0 0"><span>Account name</span><span>Last value</span><span></span></div>`;
-    archived.forEach((a,_)=>{
-      const idx=accounts.indexOf(a);
-      const lv=lastVal(a.name);
-      html+=`<div class="mgmt-row archived-row" id="mgmt-${idx}">
-        <span style="font-size:13px;color:var(--text2)">${esc(a.name)} <span class="badge badge-archived">archived</span></span>
-        <span style="font-size:13px;font-family:var(--mono);color:var(--text2)">${fmt(lv)}</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="ghost" onclick="restoreAccount(${idx})">Restore</button>
-          <button class="danger" id="permdelb-${idx}" onclick="permDelete(${idx})">Delete</button>
-        </div>
-      </div>`;
-    });
-    // close the list border on last archived row
-    html+=`<div style="border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;height:0"></div>`;
-  }
-
-  /* ── Archived accounts ── */
-  if(archived.length>0){
-    html+=`<div class="section-label" style="margin-top:24px">Archived accounts</div>
     <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Hidden from entry. All history preserved.</p>
     <div class="mgmt-header" style="border-radius:8px 8px 0 0"><span>Account name</span><span>Last value</span><span></span></div>`;
     archived.forEach((a,_)=>{
@@ -1768,7 +1747,7 @@ function addAccountOfType(type){
     showMsg(`<div class="msg err">"${esc(trimmed)}" already exists.</div>`,4000);return;
   }
   const cats=getCats();
-  const cat=cats.length?cats[0]:'General';
+  const cat=cats.includes('Savings')?'Savings':(cats.length?cats[0]:'Savings');
   accounts.push({cat,name:trimmed,archived:false,liquid:false,type});
   persistAccounts();fv={};
   renderManage();
@@ -2218,7 +2197,9 @@ async function importCSV(input){
     const newAccounts=[];
     accs.forEach(name=>{
       if(name&&!knownAccs.has(name)){
-        accounts.push({name,cat:'Imported',liquid:false,archived:false,type:'asset'});
+        // Use 'Savings' as default cat, create it if needed
+        accounts.push({name,cat:'Savings',liquid:true,archived:false,type:'asset'});
+        knownAccs.add(name); // prevent duplicates if same name appears twice in headers
         newAccounts.push(name);
       }
     });
@@ -2640,6 +2621,9 @@ async function loadFromSupabase(){
       const {data:s}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
       if(accts&&accts.length>0){
       accounts=accts.map(a=>({name:a.name,cat:a.category,liquid:a.liquid,archived:a.archived,type:a.account_type||'asset',_id:a.id}));
+      // Deduplicate by name (keep first occurrence)
+      const seen=new Set();
+      accounts=accounts.filter(a=>{if(seen.has(a.name))return false;seen.add(a.name);return true;});
     } else {
       // First time user — use defaults locally, save in background
       accounts=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
@@ -2736,7 +2720,14 @@ async function migrateLocalStorage(){
 async function saveAccountsToSupabase(){
   if(!currentUser) return;
   try{
-    // Delete existing and re-insert (simplest approach for account management)
+    // Deduplicate in-memory accounts by name before saving
+    const seen=new Set();
+    accounts=accounts.filter(a=>{
+      if(seen.has(a.name)) return false;
+      seen.add(a.name);
+      return true;
+    });
+    // Delete existing and re-insert
     await sb.from('accounts').delete().eq('user_id',currentUser.id);
     const rows=accounts.map((a,i)=>({
       user_id:currentUser.id,
