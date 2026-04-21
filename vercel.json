@@ -13,7 +13,8 @@
   ],
   "rewrites": [
     { "source": "/home", "destination": "/landing.html" },
-    { "source": "/", "destination": "/index.html" }
+    { "source": "/app", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
 
