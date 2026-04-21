@@ -422,10 +422,8 @@ const getCats=()=>[...new Set(activeAccounts().map(a=>a.cat))];
 
 // Last known value for an account across all entries
 const lastVal=(name)=>{
-  for(let i=entries.length-1;i>=0;i--){
-    if(entries[i].values[name]!=null) return entries[i].values[name];
-  }
-  return 0;
+  if(!entries.length) return 0;
+  return entries[entries.length-1].values[name]||0;
 };
 
 function load(){
@@ -533,10 +531,11 @@ function getCatTimeSeries(cat,fe){
 
 function getCatAccountRows(cat,fe){
   if(!fe.length) return [];
+  const lastEntry=fe[fe.length-1];
   return activeAccounts().filter(a=>a.cat===cat).map(a=>{
-    let first=0,last=0;
+    let first=0;
     for(let i=0;i<fe.length;i++){if((fe[i].values[a.name]||0)>0){first=fe[i].values[a.name];break;}}
-    for(let i=fe.length-1;i>=0;i--){if(fe[i].values[a.name]!=null){last=fe[i].values[a.name];break;}}
+    const last=lastEntry.values[a.name]||0;
     const chg=last-first,pct=first?(chg/first*100):(last?100:0);
     return {name:a.name,first,last,chg,pct};
   }).filter(r=>r.first>0||r.last>0);
