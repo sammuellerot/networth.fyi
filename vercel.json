@@ -13,6 +13,14 @@
   ],
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
+    },
+    {
       "source": "/home",
       "destination": "/landing.html"
     },
@@ -33,12 +41,8 @@
       "destination": "/index.html"
     },
     {
-      "source": "/sitemap.xml",
-      "destination": "/sitemap.xml"
-    },
-    {
-      "source": "/robots.txt",
-      "destination": "/robots.txt"
+      "source": "/",
+      "destination": "/landing.html"
     },
     {
       "source": "/(.*)",
