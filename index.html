@@ -2174,21 +2174,51 @@ async function importCSV(input){
   if(msg) msg.innerHTML='<span style="color:var(--text2)">Reading file...</span>';
   try{
     const text=await file.text();
-    const lines=text.trim().split('\n').filter(l=>l.trim());
+    // Normalize line endings
+    const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n').filter(l=>l.trim());
     if(lines.length<2){throw new Error('File must have at least a header row and one data row.');}
 
-    // Parse header
-    const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+    // Parse header — handle quoted fields
+    const parseRow=row=>{
+      const result=[];
+      let cur='',inQ=false;
+      for(let i=0;i<row.length;i++){
+        const ch=row[i];
+        if(ch==='"'){inQ=!inQ;}
+        else if(ch===','&&!inQ){result.push(cur.trim());cur='';}
+        else cur+=ch;
+      }
+      result.push(cur.trim());
+      return result;
+    };
+
+    const headers=parseRow(lines[0]);
     if(headers[0].toLowerCase()!=='date'){throw new Error('First column must be "Date".');}
     const accs=headers.slice(1);
+
+    // Helper: parse date in either YYYY-MM-DD or M/D/YYYY
+    const parseDate=s=>{
+      s=s.trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+      return null;
+    };
+
+    // Helper: parse dollar values — strip $, commas, spaces
+    const parseVal=s=>{
+      if(!s) return 0;
+      const cleaned=s.replace(/[$,\s]/g,'');
+      const v=parseFloat(cleaned);
+      return isNaN(v)?0:v;
+    };
 
     // Auto-create any missing accounts
     const knownAccs=new Set(accounts.map(a=>a.name));
     const newAccounts=[];
     accs.forEach(name=>{
-      if(!knownAccs.has(name)){
-        const newAcc={name,cat:'Imported',liquid:false,archived:false,type:'asset'};
-        accounts.push(newAcc);
+      if(name&&!knownAccs.has(name)){
+        accounts.push({name,cat:'Imported',liquid:false,archived:false,type:'asset'});
         newAccounts.push(name);
       }
     });
@@ -2202,12 +2232,12 @@ async function importCSV(input){
     // Parse rows
     let imported=0, skipped=0;
     for(let i=1;i<lines.length;i++){
-      const cols=lines[i].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
-      const date=cols[0];
-      if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)){skipped++;continue;}
+      const cols=parseRow(lines[i]);
+      const date=parseDate(cols[0]);
+      if(!date){skipped++;continue;}
       const values={};
       accs.forEach((name,j)=>{
-        const v=parseFloat(cols[j+1])||0;
+        const v=parseVal(cols[j+1]);
         if(v>0) values[name]=v;
       });
       if(!Object.keys(values).length){skipped++;continue;}
