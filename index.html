@@ -118,11 +118,12 @@
     .dash-widget{margin-bottom:16px !important;}
     .list-row{padding:8px 10px !important;}
     .mgmt-header{display:none;}
-    .mgmt-row{flex-wrap:wrap;gap:8px;padding:10px;}
-    .mgmt-row .name-inp{width:100%;font-size:14px;padding:8px 10px;}
-    .mgmt-row .cat-sel{width:100%;font-size:13px;}
-    .mgmt-row .liq-wrap{font-size:13px;}
-    .mgmt-row button.warn{width:100%;text-align:center;padding:7px;}
+    .mgmt-row{display:flex !important;flex-direction:column !important;grid-template-columns:none !important;gap:8px;padding:12px;border-bottom:1px solid var(--border);}
+    .mgmt-row .name-inp{width:100% !important;font-size:15px;padding:9px 12px;}
+    .mgmt-row .cat-sel{width:100% !important;font-size:14px;padding:8px 10px;}
+    .mgmt-row .liq-wrap{display:flex;align-items:center;gap:8px;font-size:13px;}
+    .mgmt-row button.warn{width:100% !important;text-align:center;padding:9px;font-size:13px;}
+    .new-cat-inp{width:100% !important;}
     .entry-bar{flex-wrap:wrap;gap:10px;}
     .entry-bar .field{flex:1;min-width:120px;}
     .auth-box{padding:24px 20px;margin:16px;}
